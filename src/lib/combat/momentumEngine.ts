@@ -28,7 +28,7 @@ export function resolvePhase1(
   faction: FactionCombatInput,
   context: MissionCombatContext
 ): CombatPhaseResult {
-  const squadDPS = calculateSquadDPS(soldiers, context);
+  const squadDPS = calculateSquadDPS(soldiers, context, faction.shelterBonus);
   const enemyDPS = calculateEnemyDPSToSquad(faction, context, context.shelter);
   const approachMod = getApproachModifier(context.approach);
 
@@ -72,7 +72,7 @@ export function resolvePhase2(
   context: MissionCombatContext,
   currentMomentum: number
 ): CombatPhaseResult {
-  const squadDPS = calculateSquadDPS(soldiers, context);
+  const squadDPS = calculateSquadDPS(soldiers, context, faction.shelterBonus);
   const enemyDPS = calculateEnemyDPSToSquad(faction, context, context.shelter);
 
   // Momentum modifier: current momentum affects both sides
@@ -118,7 +118,7 @@ export function resolvePhase3(
   context: MissionCombatContext,
   currentMomentum: number
 ): CombatPhaseResult {
-  const squadDPS = calculateSquadDPS(soldiers, context);
+  const squadDPS = calculateSquadDPS(soldiers, context, faction.shelterBonus);
   const enemyDPS = calculateEnemyDPSToSquad(faction, context, context.shelter);
 
   // Strong momentum = decisive resolution

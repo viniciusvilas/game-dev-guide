@@ -141,11 +141,13 @@ export function calculatePenetrationFactor(pen: number, armorNivel: number): num
 /** Calculate total effective DPS for the player squad in a given context */
 export function calculateSquadDPS(
   soldiers: SoldierCombatInput[],
-  context: MissionCombatContext
+  context: MissionCombatContext,
+  enemyShelter: ShelterLevel
 ): number {
   const approachMod = getApproachModifier(context.approach);
   const intelMod = getIntelModifier(context.intel);
   const timeMod = getTimeOfDayModifier(context.timeOfDay);
+  const enemyShelterRed = getShelterReduction(enemyShelter);
 
   let totalDPS = 0;
   for (const s of soldiers) {
@@ -154,7 +156,7 @@ export function calculateSquadDPS(
     totalDPS += baseDPS * distMod * intelMod * timeMod.accuracyMod;
   }
 
-  return totalDPS * approachMod.playerDpsMod;
+  return totalDPS * approachMod.playerDpsMod * (1 - enemyShelterRed);
 }
 
 /** Calculate effective DPS the enemy faction deals to player squad */

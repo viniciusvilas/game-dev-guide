@@ -47,7 +47,7 @@ export interface FactionCombatInput {
   equipmentLevel: number;     // 1-5
   equipmentMultiplier: number; // mult_equip (derived from equipmentLevel)
   stressBase: number;         // 0.60-1.40
-  shelterBonus: number;       // M_abrigo from location (0-3)
+  shelterBonus: ShelterLevel;  // M_abrigo from location (0-3)
 }
 
 /** Mission-level context for the combat resolver */

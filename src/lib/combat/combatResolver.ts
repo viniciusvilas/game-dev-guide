@@ -48,7 +48,6 @@ const RANK_SURVIVAL: Record<string, number> = {
 export function determineDamageState(
   rng: SeededRng,
   soldier: SoldierCombatInput,
-  totalDamageTaken: number,
   totalDamagePool: number,
   nSoldiers: number
 ): { state: DamageState; damageTaken: number } {
@@ -139,7 +138,7 @@ export function resolveSoldierOutcomes(
 
   return soldiers.map(soldier => {
     const { state, damageTaken } = determineDamageState(
-      rng, soldier, totalDamageTaken, effectiveDamagePool, soldiers.length
+      rng, soldier, effectiveDamagePool, soldiers.length
     );
 
     // Individual damage dealt proportional to DPS contribution

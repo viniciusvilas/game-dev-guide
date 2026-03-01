@@ -38,7 +38,7 @@ export function resolveTTKRace(
   const totalFactionHP = calculateFactionHP(faction);
 
   // DPS calculations
-  const squadDPS = calculateSquadDPS(soldiers, context);
+  const squadDPS = calculateSquadDPS(soldiers, context, faction.shelterBonus);
   const enemyDPS = calculateEnemyDPSToSquad(faction, context, context.shelter);
 
   // TTK = total enemy HP / our DPS (turns to eliminate enemy)
