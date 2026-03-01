@@ -3,15 +3,15 @@
 export type CitySize = 'small' | 'medium' | 'large';
 
 export type POIType =
-  | 'military_base'
-  | 'hospital'
-  | 'market'
-  | 'government'
-  | 'warehouse'
-  | 'port'
+  | 'private_company'
+  | 'government_area'
   | 'airport'
-  | 'refugee_camp'
-  | 'ruins';
+  | 'conflict_zone'
+  | 'private_base'
+  | 'national_military_base'
+  | 'vip_residence'
+  | 'terrorist_base'
+  | 'transport_hub';
 
 export interface WorldSeed {
   value: number;

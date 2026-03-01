@@ -8,6 +8,6 @@ export interface CountryReputation {
 export interface ReputationData {
   professional: number;    // 0-100, competence perception
   notoriety: number;       // 0-100, public visibility / infamy
-  ceoReputation: number;   // 0-100, personal CEO standing
+  ceoReputation: { ceoId: string; value: number }[];
   byCountry: CountryReputation[];
 }
