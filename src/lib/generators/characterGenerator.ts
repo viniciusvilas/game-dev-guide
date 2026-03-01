@@ -1,23 +1,27 @@
-// Iron Contract — Character Generator (pure, deterministic)
+// Iron Contract — Character Generator (GDD v2.0, pure, deterministic)
 
 import type { CEO, GovernmentOfficial } from '@/types/character';
 import type { WorldData } from '@/types/world';
 import { createRng } from './seededRandom';
 import { generateFullName, generateOfficialTitle } from './nameGenerator';
 
+const CEO_SECTORS = [
+  'Defense & Security', 'Oil & Energy', 'Mining & Resources',
+  'Government Affairs', 'Logistics & Transport', 'Technology',
+];
+
 /**
  * Generate the player CEO.
  */
 export function generateCEO(seed: number, companyId: string): CEO {
   const rng = createRng(seed);
-  const backgrounds = [
-    'Ex-Special Forces', 'Former Intelligence Officer', 'Military Strategist',
-    'Corporate Security Expert', 'War Correspondent', 'Retired Colonel',
-  ];
 
   return {
     name: generateFullName(rng),
-    background: rng.pick(backgrounds),
+    sector: rng.pick(CEO_SECTORS),
+    budget: rng.nextInt(5000, 50000),
+    contractQuality: rng.nextInt(1, 5),
+    active: true,
     reputation: 50,
     companyId,
   };
@@ -39,7 +43,7 @@ export function generateOfficials(seed: number, world: WorldData): GovernmentOff
         name: generateFullName(rng),
         title: generateOfficialTitle(rng),
         countryId: country.id,
-        corruptionLevel: rng.nextInt(10, 80),
+        influenceLevel: rng.nextInt(10, 80),
         relationWithPlayer: rng.nextInt(-20, 20),
       });
     }

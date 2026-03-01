@@ -1,4 +1,6 @@
-// Iron Contract — Soldier Generator (pure, deterministic)
+// Iron Contract — Soldier Generator (GDD v2.0, pure, deterministic)
+// HP is NOT stored on soldier — it's computed dynamically by the combat engine:
+// HP_efetivo = 100 / (1 - MT_vest)
 
 import type { Soldier, SoldierAttributes, Rank, WeaponMastery, WeaponCategory, SoldierSkill } from '@/types/soldier';
 import type { SeededRng } from './seededRandom';
@@ -53,7 +55,6 @@ function generateSkills(rng: SeededRng): SoldierSkill[] {
 export function generateSoldier(seed: number, quality: number = 3): Soldier {
   const rng = createRng(seed);
   const rank = rng.pick(STARTING_RANKS);
-  const hpMax = rng.nextInt(80, 120);
 
   return {
     id: `soldier-${rng.nextInt(100000, 999999)}`,
@@ -63,8 +64,6 @@ export function generateSoldier(seed: number, quality: number = 3): Soldier {
     attributes: generateAttributes(rng, quality),
     weaponMasteries: generateWeaponMasteries(rng),
     skills: generateSkills(rng),
-    hp: hpMax,
-    hpMax,
     stress: rng.nextInt(0, 20),
     morale: rng.nextInt(50, 80),
     salary: rng.nextInt(50, 150),
@@ -86,7 +85,7 @@ export function generateStartingRoster(baseSeed: number, count: number): Soldier
   const soldiers: Soldier[] = [];
   for (let i = 0; i < count; i++) {
     const soldierSeed = rng.nextInt(0, 2147483647);
-    const quality = rng.nextInt(2, 5); // starting soldiers are mid-tier
+    const quality = rng.nextInt(2, 5);
     soldiers.push(generateSoldier(soldierSeed, quality));
   }
   return soldiers;

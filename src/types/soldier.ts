@@ -1,4 +1,6 @@
-// Iron Contract — Soldier Types (GDD-faithful)
+// Iron Contract — Soldier Types (GDD v2.0)
+// HP is NOT a stored field — it's computed by the combat engine:
+// HP_efetivo = 100 / (1 - MT_vest)
 
 export type SoldierStatus =
   | 'available'
@@ -58,8 +60,6 @@ export interface Soldier {
   attributes: SoldierAttributes;
   weaponMasteries: WeaponMastery[];
   skills: SoldierSkill[];
-  hp: number;
-  hpMax: number;
   stress: number;       // 0-100
   morale: number;       // 0-100
   salary: number;       // daily cost
