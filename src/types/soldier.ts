@@ -1,21 +1,32 @@
 // Iron Contract — Soldier Types (GDD-faithful)
 
-export type SoldierStatus = 'available' | 'deployed' | 'injured' | 'dead' | 'resting';
+export type SoldierStatus =
+  | 'available'
+  | 'on_mission'
+  | 'injured'
+  | 'severely_injured'
+  | 'unconscious'
+  | 'dead'
+  | 'in_training'
+  | 'on_leave';
 
 export type Rank =
-  | 'recruit'      // Recruta
-  | 'soldier'      // Soldado
-  | 'veteran'      // Veterano
-  | 'elite'        // Elite
-  | 'commander';   // Comandante
+  | 'recruit'
+  | 'operator'
+  | 'corporal'
+  | 'sergeant'
+  | 'sergeant_major'
+  | 'lieutenant'
+  | 'captain'
+  | 'major';
 
 export interface SoldierAttributes {
-  combat: number;       // 1-100
-  precision: number;    // 1-100
-  tactics: number;      // 1-100
-  endurance: number;    // 1-100
-  stealth: number;      // 1-100
-  leadership: number;   // 1-100
+  combat: number;        // 0-100
+  surveillance: number;  // 0-100
+  stealth: number;       // 0-100
+  driving: number;       // 0-100
+  medicine: number;      // 0-100
+  logistics: number;     // 0-100
 }
 
 export type WeaponCategory =
@@ -47,11 +58,11 @@ export interface Soldier {
   attributes: SoldierAttributes;
   weaponMasteries: WeaponMastery[];
   skills: SoldierSkill[];
-  hp: number;          // current HP
-  hpMax: number;       // max HP
-  stress: number;      // 0-100
-  morale: number;      // 0-100
-  salary: number;      // daily cost
+  hp: number;
+  hpMax: number;
+  stress: number;       // 0-100
+  morale: number;       // 0-100
+  salary: number;       // daily cost
   equippedWeaponId: string | null;
   equippedArmorId: string | null;
   xp: number;
