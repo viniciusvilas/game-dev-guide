@@ -1,11 +1,9 @@
-// Iron Contract — Faction Types (GDD-faithful)
+// Iron Contract — Faction Types (GDD v2.0)
 
 export type FactionType =
-  | 'rebel'
-  | 'militia'
-  | 'cartel'
-  | 'government_force'
-  | 'rival_pmc';
+  | 'national_army'
+  | 'terrorist'
+  | 'criminal';
 
 export interface FactionLeader {
   name: string;
@@ -17,11 +15,11 @@ export interface Faction {
   name: string;
   type: FactionType;
   leader: FactionLeader;
-  territory: string[];       // city IDs controlled
-  strength: number;          // 1-100 overall power
-  hostility: number;         // 0-100 towards player
-  troops: number;            // estimated headcount
-  averageLevel: number;      // average soldier quality 1-10
+  territory: string[];         // city IDs controlled
+  militaryPower: number;       // 1-100 overall power
+  stressBase: number;          // 0.60-1.40 stress base for combat
+  troops: number;              // estimated headcount
+  troopLevel: number;          // 1-5 average soldier quality
+  equipmentLevel: number;      // 1-5 equipment quality
   equipmentMultiplier: number; // mult_equip
-  baseStress: number;        // stress base for combat
 }

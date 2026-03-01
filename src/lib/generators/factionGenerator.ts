@@ -1,4 +1,4 @@
-// Iron Contract — Faction Generator (pure, deterministic)
+// Iron Contract — Faction Generator (GDD v2.0, pure, deterministic)
 
 import type { Faction, FactionType } from '@/types/faction';
 import type { WorldData } from '@/types/world';
@@ -6,9 +6,7 @@ import type { SeededRng } from './seededRandom';
 import { createRng } from './seededRandom';
 import { generateFactionName, generateFullName } from './nameGenerator';
 
-const FACTION_TYPES: FactionType[] = [
-  'rebel', 'militia', 'cartel', 'government_force', 'rival_pmc',
-];
+const FACTION_TYPES: FactionType[] = ['national_army', 'terrorist', 'criminal'];
 
 /**
  * Generate factions and assign them to cities in the world.
@@ -32,7 +30,6 @@ export function generateFactions(seed: number, world: WorldData, count: number):
 
   for (let i = 0; i < count; i++) {
     const type = rng.pick(FACTION_TYPES);
-    // Assign 1-3 cities as territory
     const territoryCount = rng.nextInt(1, Math.min(3, shuffledCities.length));
     const startIdx = i * 3;
     const territory = shuffledCities.slice(startIdx, startIdx + territoryCount);
@@ -43,19 +40,17 @@ export function generateFactions(seed: number, world: WorldData, count: number):
       type,
       leader: {
         name: generateFullName(rng),
-        title: type === 'cartel' ? 'Cartel Boss'
-          : type === 'rebel' ? 'Revolutionary Leader'
-          : type === 'government_force' ? 'General'
-          : type === 'rival_pmc' ? 'CEO'
-          : 'Warlord',
+        title: type === 'criminal' ? 'Cartel Boss'
+          : type === 'terrorist' ? 'Cell Commander'
+          : 'General',
       },
       territory,
-      strength: rng.nextInt(20, 80),
-      hostility: rng.nextInt(10, 70),
+      militaryPower: rng.nextInt(20, 80),
+      stressBase: rng.nextFloat(0.60, 1.40),
       troops: rng.nextInt(50, 500),
-      averageLevel: rng.nextInt(2, 8),
+      troopLevel: rng.nextInt(1, 5),
+      equipmentLevel: rng.nextInt(1, 5),
       equipmentMultiplier: rng.nextFloat(0.5, 1.5),
-      baseStress: rng.nextInt(10, 50),
     };
 
     factions.push(faction);
