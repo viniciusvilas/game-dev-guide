@@ -8,6 +8,12 @@ import { generateFactionName, generateFullName } from './nameGenerator';
 
 const FACTION_TYPES: FactionType[] = ['national_army', 'terrorist', 'criminal'];
 
+/** GDD v2.0 — equipmentLevel → equipmentMultiplier deterministic mapping */
+export function equipmentLevelToMultiplier(level: number): number {
+  const table: Record<number, number> = { 1: 0.60, 2: 0.80, 3: 1.00, 4: 1.20, 5: 1.40 };
+  return table[level] ?? 1.00;
+}
+
 /**
  * Generate factions and assign them to cities in the world.
  * Pure and deterministic.
@@ -16,7 +22,6 @@ export function generateFactions(seed: number, world: WorldData, count: number):
   const rng = createRng(seed);
   const factions: Faction[] = [];
 
-  // Collect all city IDs for territory assignment
   const allCityIds: string[] = [];
   for (const country of world.countries) {
     for (const region of country.regions) {
@@ -33,6 +38,7 @@ export function generateFactions(seed: number, world: WorldData, count: number):
     const territoryCount = rng.nextInt(1, Math.min(3, shuffledCities.length));
     const startIdx = i * 3;
     const territory = shuffledCities.slice(startIdx, startIdx + territoryCount);
+    const equipmentLevel = rng.nextInt(1, 5);
 
     const faction: Faction = {
       id: `faction-${rng.nextInt(100000, 999999)}`,
@@ -49,8 +55,8 @@ export function generateFactions(seed: number, world: WorldData, count: number):
       stressBase: rng.nextFloat(0.60, 1.40),
       troops: rng.nextInt(50, 500),
       troopLevel: rng.nextInt(1, 5),
-      equipmentLevel: rng.nextInt(1, 5),
-      equipmentMultiplier: rng.nextFloat(0.5, 1.5),
+      equipmentLevel,
+      equipmentMultiplier: equipmentLevelToMultiplier(equipmentLevel),
     };
 
     factions.push(faction);
