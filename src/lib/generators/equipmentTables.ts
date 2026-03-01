@@ -19,7 +19,7 @@ interface WeaponTemplate {
 const WEAPON_TEMPLATES: WeaponTemplate[] = [
   { name: 'Glock 17', category: 'pistol', pfb: 18, cad: 4, pen: 0.6, silenciavel: true, price: [250, 450] },
   { name: 'MP5', category: 'smg', pfb: 28, cad: 8, pen: 0.8, silenciavel: true, price: [600, 900] },
-  { name: 'P90', category: 'smg', pfb: 30, cad: 9, pen: 1.2, silenciavel: false, price: [800, 1200] },
+  { name: 'P90', category: 'smg', pfb: 30, cad: 9, pen: 1.2, silenciavel: true, price: [800, 1200] },
   { name: 'M4A1', category: 'assault_rifle', pfb: 45, cad: 7, pen: 3.2, silenciavel: true, price: [1000, 1500] },
   { name: 'AK-47', category: 'assault_rifle', pfb: 48, cad: 6, pen: 3.0, silenciavel: false, price: [800, 1200] },
   { name: 'HK416', category: 'assault_rifle', pfb: 47, cad: 7, pen: 3.4, silenciavel: true, price: [1200, 1800] },
