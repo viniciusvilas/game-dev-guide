@@ -1,7 +1,7 @@
 // Iron Contract — Market Prices (GDD v2.0, pure, deterministic)
 // Dynamic weapon/armor prices with seed-based weekly variation.
 
-import { createRng } from '@/lib/generators/seededRandom';
+import { createRng, hashString } from '@/lib/generators/seededRandom';
 
 // === Base Price Tables (from equipmentTables.ts templates) ===
 
@@ -32,17 +32,9 @@ const ARMOR_BASE_PRICES: Record<string, number> = {
 function getWeeklyVariation(itemName: string, seed: number, currentDay: number): number {
   const weekIndex = Math.floor(currentDay / 7);
   // Use item name hash to differentiate items within same week
-  const nameHash = hashString(itemName);
+  const nameHash = Math.abs(hashString(itemName));
   const rng = createRng(seed + weekIndex + nameHash);
   return rng.nextFloat(0.85, 1.15);
-}
-
-function hashString(s: string): number {
-  let hash = 0;
-  for (let i = 0; i < s.length; i++) {
-    hash = ((hash << 5) - hash + s.charCodeAt(i)) | 0;
-  }
-  return Math.abs(hash);
 }
 
 // === Public API ===
