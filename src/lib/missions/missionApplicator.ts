@@ -27,6 +27,7 @@ export function applyMissionResult(
     missionSoldiers,
     result.combatResult.soldierResults,
     isVictory,
+    state.currentDay,
   );
 
   // 2. Apply XP, rank ups, and mastery gains
@@ -80,13 +81,13 @@ export function applyMissionResult(
   const updatedWeapons = state.weapons.map(w => {
     const loss = weaponResults.get(w.id);
     if (!loss) return w;
-    return { ...w, conditionPercent: Math.max(0, w.conditionPercent - loss) };
+    return { ...w, condition: Math.max(0, w.condition - loss) };
   });
 
   const updatedArmors = state.armors.map(a => {
     const loss = armorResults.get(a.id);
     if (!loss) return a;
-    return { ...a, conditionPercent: Math.max(0, a.conditionPercent - loss) };
+    return { ...a, condition: Math.max(0, a.condition - loss) };
   });
 
   // 4. Update reputation

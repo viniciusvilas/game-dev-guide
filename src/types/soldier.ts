@@ -69,4 +69,5 @@ export interface Soldier {
   xp: number;
   missionsCompleted: number;
   daysInService: number;
+  injuredSinceDay?: number;  // day when soldier was injured
 }

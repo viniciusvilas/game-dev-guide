@@ -26,10 +26,10 @@ export function unequipArmor(soldier: Soldier): Soldier {
 
 /** Repair a weapon to full condition (100%) */
 export function repairWeapon(weapon: Weapon): Weapon {
-  return { ...weapon, conditionPercent: 100, condition: 'new' as const };
+  return { ...weapon, condition: 100 };
 }
 
 /** Repair armor to full condition (100%) */
 export function repairArmor(armor: Armor): Armor {
-  return { ...armor, conditionPercent: 100, condition: 'new' as const };
+  return { ...armor, condition: 100 };
 }
