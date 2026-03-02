@@ -11,6 +11,7 @@ import type { Contract, ActiveContract, ContractResult } from './contract';
 import type { CompanyFinances } from './economy';
 import type { ReputationData } from './reputation';
 import type { GameEvent } from './events';
+import type { GameOverReason } from '@/lib/gameLoop/gameOverChecker';
 
 export interface GameState {
   version: string;          // save format version
@@ -32,4 +33,5 @@ export interface GameState {
   reputation: ReputationData;
   events: GameEvent[];
   currentDay: number;
+  gameOver: GameOverReason;
 }

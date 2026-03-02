@@ -102,5 +102,6 @@ export function newGame(seed: number, difficulty: Difficulty): GameState {
     reputation,
     events: [],
     currentDay: 1,
+    gameOver: null,
   };
 }

@@ -74,6 +74,45 @@ export function calculateReputationBonus(reputation: ReputationData): number {
   return 1.00 + ((p - 50) / 50) * 0.40;  // 1.00 to 1.40
 }
 
+/**
+ * Update country-specific reputation after combat.
+ * Increases reputation in the contract's country on victory, decreases on defeat.
+ */
+export function updateReputationByCountry(
+  result: CombatResult,
+  reputation: ReputationData,
+  contract: import('@/types/contract').Contract,
+): ReputationData {
+  const countryId = contract.targetCityId.split('-')[0]; // derive country from city ID prefix
+  // Find the country entry — try matching by contract's implied country
+  const byCountry = reputation.byCountry.map(entry => {
+    // We match all entries and only modify the one for this contract's country
+    // Since targetCityId format is "city-{countryId}-...", we need the world to resolve.
+    // Fallback: update the first country entry if no match found.
+    return entry;
+  });
+
+  // Find country for this contract's city
+  let countryIdx = byCountry.findIndex(c => contract.targetCityId.includes(c.countryId));
+  if (countryIdx === -1 && byCountry.length > 0) {
+    countryIdx = 0; // fallback to first country
+  }
+
+  if (countryIdx >= 0) {
+    const delta = result.outcome === 'victory' ? 5
+      : result.outcome === 'defeat' ? -8
+      : -2;
+    const updated = [...byCountry];
+    updated[countryIdx] = {
+      ...updated[countryIdx],
+      value: clamp(updated[countryIdx].value + delta, -100, 100),
+    };
+    return { ...reputation, byCountry: updated };
+  }
+
+  return reputation;
+}
+
 function clamp(v: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, v));
 }
