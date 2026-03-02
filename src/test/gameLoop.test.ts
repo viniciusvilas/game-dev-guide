@@ -7,8 +7,10 @@ import {
   processFinanceTick,
   generateAndQueueEvents,
   resolveEventQueue,
+  processPassiveTicks,
   advanceWorldDay,
 } from '@/lib/gameLoop/advanceDay';
+import { checkGameOver } from '@/lib/gameLoop/gameOverChecker';
 import {
   createInitialBase,
   upgradeBuilding,
@@ -113,9 +115,26 @@ describe('advanceDay', () => {
     expect(after2.world.timeOfDay).toBe('day');
   });
 
-  it('advanceWorldDay increments daysInService', () => {
-    const after = advanceWorldDay(state);
-    expect(after.soldiers[0].daysInService).toBe(state.soldiers[0].daysInService + 1);
+  it('processPassiveTicks recovers soldier stress', () => {
+    const stressed = { ...state, soldiers: state.soldiers.map(s => ({ ...s, stress: 50 })) };
+    const after = processPassiveTicks(stressed);
+    expect(after.soldiers[0].stress).toBe(45); // -5/day for available
+  });
+
+  it('processPassiveTicks regenerates faction militaryPower', () => {
+    const weakFaction = { ...state, factions: state.factions.map(f => ({ ...f, militaryPower: 10 })) };
+    const after = processPassiveTicks(weakFaction);
+    expect(after.factions[0].militaryPower).toBe(11);
+  });
+
+  it('processPassiveTicks removes expired contracts', () => {
+    const expired = {
+      ...state,
+      availableContracts: state.availableContracts.map(c => ({ ...c, expiresOnDay: 0 })),
+    };
+    const after = processPassiveTicks(expired);
+    // Expired removed, new ones generated to fill minimum of 3
+    expect(after.availableContracts.length).toBeGreaterThanOrEqual(3);
   });
 
   it('full advanceDay pipeline runs without errors', () => {
@@ -130,6 +149,39 @@ describe('advanceDay', () => {
     expect(a.currentDay).toBe(b.currentDay);
     expect(a.finances.balance).toBe(b.finances.balance);
     expect(a.soldiers.length).toBe(b.soldiers.length);
+  });
+
+  it('advanceDay sets gameOver on bankruptcy', () => {
+    const broke = { ...state, finances: { ...state.finances, balance: -100 } };
+    const after = advanceDay(broke);
+    expect(after.gameOver).toBe('bankruptcy');
+  });
+
+  it('advanceDay skips if already game over', () => {
+    const over = { ...state, gameOver: 'bankruptcy' as const };
+    const after = advanceDay(over);
+    expect(after.currentDay).toBe(state.currentDay); // no change
+  });
+});
+
+// === Game Over Checker ===
+
+describe('gameOverChecker', () => {
+  it('returns null for active game', () => {
+    const state = newGame(42, 'normal');
+    expect(checkGameOver(state)).toBeNull();
+  });
+
+  it('returns bankruptcy when balance <= 0', () => {
+    const state = newGame(42, 'normal');
+    const broke = { ...state, finances: { ...state.finances, balance: -1 } };
+    expect(checkGameOver(broke)).toBe('bankruptcy');
+  });
+
+  it('returns no_soldiers when all dead', () => {
+    const state = newGame(42, 'normal');
+    const dead = { ...state, soldiers: state.soldiers.map(s => ({ ...s, status: 'dead' as const })) };
+    expect(checkGameOver(dead)).toBe('no_soldiers');
   });
 });
 

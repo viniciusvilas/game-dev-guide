@@ -1,7 +1,7 @@
 // Iron Contract — Economy Module Barrel Export
 
 export { calculateContractReward, createRewardTransaction } from './contractRewards';
-export { updateReputation, calculateReputationBonus } from './reputationEngine';
+export { updateReputation, calculateReputationBonus, updateReputationByCountry } from './reputationEngine';
 export {
   calculateDailySalaries,
   createSalaryTransactions,
