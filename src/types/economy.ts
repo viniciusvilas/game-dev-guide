@@ -13,6 +13,7 @@ export type TransactionType =
   | 'medical'
   | 'penalty'
   | 'maintenance'
+  | 'training'
   | 'other';
 
 export interface DailyTransaction {
