@@ -10,7 +10,8 @@ export type SoldierStatus =
   | 'unconscious'
   | 'dead'
   | 'in_training'
-  | 'on_leave';
+  | 'on_leave'
+  | 'deserted';
 
 export type Rank =
   | 'recruit'

@@ -116,7 +116,7 @@ describe('eventTriggers', () => {
   describe('checkSoldierTriggers', () => {
     it('returns breakdown event for stress >= 90', () => {
       const soldiers = [makeSoldier({ stress: 95 })];
-      const events = checkSoldierTriggers(soldiers, 10);
+      const events = checkSoldierTriggers(soldiers, 10, []);
       expect(events.length).toBe(1);
       expect(events[0].type).toBe('soldier_breakdown');
       expect(events[0].priority).toBe('high');
@@ -124,7 +124,7 @@ describe('eventTriggers', () => {
 
     it('returns desertion event for morale <= 10', () => {
       const soldiers = [makeSoldier({ morale: 5 })];
-      const events = checkSoldierTriggers(soldiers, 10);
+      const events = checkSoldierTriggers(soldiers, 10, []);
       expect(events.length).toBe(1);
       expect(events[0].type).toBe('soldier_deserted');
       expect(events[0].priority).toBe('critical');
@@ -132,13 +132,13 @@ describe('eventTriggers', () => {
 
     it('ignores dead soldiers', () => {
       const soldiers = [makeSoldier({ status: 'dead', stress: 95, morale: 5 })];
-      const events = checkSoldierTriggers(soldiers, 10);
+      const events = checkSoldierTriggers(soldiers, 10, []);
       expect(events.length).toBe(0);
     });
 
     it('returns no events for normal soldiers', () => {
       const soldiers = [makeSoldier()];
-      const events = checkSoldierTriggers(soldiers, 10);
+      const events = checkSoldierTriggers(soldiers, 10, []);
       expect(events.length).toBe(0);
     });
   });
@@ -146,25 +146,25 @@ describe('eventTriggers', () => {
   describe('checkFinanceTriggers', () => {
     it('returns warning when runway is 4-7 days', () => {
       const finances = makeFinances({ balance: 3000, dailyBurn: 500 }); // 6 days
-      const events = checkFinanceTriggers(finances, 10);
+      const events = checkFinanceTriggers(finances, 10, []);
       expect(events.some(e => e.type === 'financial_warning')).toBe(true);
     });
 
     it('returns crisis when runway <= 3 days', () => {
       const finances = makeFinances({ balance: 1000, dailyBurn: 500 }); // 2 days
-      const events = checkFinanceTriggers(finances, 10);
+      const events = checkFinanceTriggers(finances, 10, []);
       expect(events.some(e => e.type === 'financial_crisis')).toBe(true);
     });
 
     it('returns bankrupt event at balance <= 0', () => {
       const finances = makeFinances({ balance: 0, dailyBurn: 500 });
-      const events = checkFinanceTriggers(finances, 10);
+      const events = checkFinanceTriggers(finances, 10, []);
       expect(events.some(e => e.title === 'Falência')).toBe(true);
     });
 
     it('returns no events for healthy finances', () => {
       const finances = makeFinances();
-      const events = checkFinanceTriggers(finances, 10);
+      const events = checkFinanceTriggers(finances, 10, []);
       expect(events.length).toBe(0);
     });
   });
@@ -172,19 +172,19 @@ describe('eventTriggers', () => {
   describe('checkReputationTriggers', () => {
     it('returns milestone for professional >= 80', () => {
       const rep = makeReputation({ professional: 85 });
-      const events = checkReputationTriggers(rep, 10);
+      const events = checkReputationTriggers(rep, 10, []);
       expect(events.some(e => e.title === 'Reputação excelente')).toBe(true);
     });
 
     it('returns negative event for notoriety >= 70', () => {
       const rep = makeReputation({ notoriety: 75 });
-      const events = checkReputationTriggers(rep, 10);
+      const events = checkReputationTriggers(rep, 10, []);
       expect(events.some(e => e.title === 'Atenção indesejada')).toBe(true);
     });
 
     it('returns ruin event for professional <= 15', () => {
       const rep = makeReputation({ professional: 10 });
-      const events = checkReputationTriggers(rep, 10);
+      const events = checkReputationTriggers(rep, 10, []);
       expect(events.some(e => e.title === 'Reputação em ruínas')).toBe(true);
     });
   });
@@ -192,13 +192,13 @@ describe('eventTriggers', () => {
   describe('checkFactionTriggers', () => {
     it('returns weakened event for militaryPower <= 10', () => {
       const factions = [makeFaction({ militaryPower: 5 })];
-      const events = checkFactionTriggers(factions, 10);
+      const events = checkFactionTriggers(factions, 10, []);
       expect(events.some(e => e.type === 'faction_weakened')).toBe(true);
     });
 
     it('returns strength event for militaryPower >= 90', () => {
       const factions = [makeFaction({ militaryPower: 95 })];
-      const events = checkFactionTriggers(factions, 10);
+      const events = checkFactionTriggers(factions, 10, []);
       expect(events.some(e => e.type === 'faction_hostility_change')).toBe(true);
     });
   });
