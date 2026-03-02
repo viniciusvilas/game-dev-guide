@@ -62,10 +62,13 @@ export function processTraining(
 ): TrainingResult {
   let currentLevel = currentAttributes[session.attribute];
   let totalGain = 0;
+  let daysActuallyTrained = 0;
 
   for (let d = 0; d < session.durationDays; d++) {
     const gain = calculateDailyGain(currentLevel);
+    if (gain === 0) break; // cap reached — stop early, don't charge remaining days
     totalGain += gain;
+    daysActuallyTrained++;
     currentLevel = Math.min(100, currentLevel + gain);
   }
 
@@ -73,7 +76,7 @@ export function processTraining(
     soldierId: session.soldierId,
     attributeGained: session.attribute,
     pointsGained: totalGain,
-    totalCost: session.durationDays * session.costPerDay,
+    totalCost: daysActuallyTrained * session.costPerDay,
   };
 }
 

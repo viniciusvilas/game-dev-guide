@@ -37,7 +37,7 @@ export function calculateSoldierXP(
   const stateMultiplier = STATE_MULTIPLIERS[soldierResult.damageState];
 
   // Damage contribution bonus
-  const damageBonus = Math.floor(soldierResult.damageDealt / DAMAGE_XP_DIVISOR);
+  const damageBonus = Math.min(50, Math.floor(soldierResult.damageDealt / DAMAGE_XP_DIVISOR));
 
   const totalXP = Math.floor(baseXP * stateMultiplier) + damageBonus;
 

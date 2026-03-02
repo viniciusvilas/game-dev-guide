@@ -100,11 +100,18 @@ describe('xpEngine', () => {
     expect(calculateSoldierXP(result, contract)).toBe(30);
   });
 
-  it('damage dealt adds bonus XP', () => {
+  it('damage dealt adds bonus XP (capped at 50)', () => {
     const result = makeSoldierResult({ damageState: 'healthy', damageDealt: 200 });
     const contract = makeContract({ dangerLevel: 5 });
-    // 50 + floor(200/50) = 50 + 4 = 54
+    // 50 + min(50, floor(200/50)) = 50 + 4 = 54
     expect(calculateSoldierXP(result, contract)).toBe(54);
+  });
+
+  it('damage bonus is capped at 50', () => {
+    const result = makeSoldierResult({ damageState: 'healthy', damageDealt: 5000 });
+    const contract = makeContract({ dangerLevel: 5 });
+    // 50 + min(50, floor(5000/50)) = 50 + 50 = 100
+    expect(calculateSoldierXP(result, contract)).toBe(100);
   });
 
   it('applySoldierXP adds XP to soldier', () => {
@@ -208,6 +215,15 @@ describe('trainingSystem', () => {
     // Day 1-2: level 78,81 → gain 2,1 (crosses 80 boundary)
     // Days 3-5: level 82,83,84 → gain 1,1,1
     expect(result.pointsGained).toBe(6); // 2+1+1+1+1
+    expect(result.totalCost).toBe(150);  // 5 days * $30
+  });
+
+  it('processTraining stops early and charges zero at cap (95+)', () => {
+    const session = createTrainingSession('sol-1', 'combat', 5);
+    const attrs = makeAttributes({ combat: 96 });
+    const result = processTraining(session, attrs);
+    expect(result.pointsGained).toBe(0);
+    expect(result.totalCost).toBe(0);
   });
 
   it('applyTrainingResult updates attributes correctly', () => {
