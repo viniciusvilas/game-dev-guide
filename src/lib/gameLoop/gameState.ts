@@ -12,8 +12,7 @@ import { generateContracts } from '@/lib/generators/contractGenerator';
 import { createInitialFinances } from '@/lib/economy/financeEngine';
 import { createInitialBase } from '@/lib/base/baseManager';
 import { createRng } from '@/lib/generators/seededRandom';
-
-const SAVE_VERSION = '1';
+import { SAVE_VERSION } from '@/lib/persistence/storage';
 
 const DIFFICULTY_CONFIG: Record<Difficulty, { funds: number; soldiers: number; factions: number }> = {
   easy:   { funds: 80000, soldiers: 8, factions: 4 },
@@ -30,7 +29,7 @@ export function newGame(seed: number, difficulty: Difficulty): GameState {
   const rng = createRng(seed);
 
   // Generate world
-  const worldSeed = { value: seed, timestamp: Date.now() };
+  const worldSeed = { value: seed, timestamp: 0 };
   const world = generateWorld(worldSeed);
 
   // Find a starting city (first large city)

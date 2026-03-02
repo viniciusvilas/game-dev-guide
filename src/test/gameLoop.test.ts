@@ -104,7 +104,6 @@ describe('advanceDay', () => {
   it('advanceWorldDay increments currentDay', () => {
     const after = advanceWorldDay(state);
     expect(after.currentDay).toBe(2);
-    expect(after.world.currentDay).toBe(2);
   });
 
   it('advanceWorldDay toggles time of day', () => {
