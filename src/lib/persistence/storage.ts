@@ -4,7 +4,7 @@
 import type { GameState } from '@/types/game';
 
 const SAVE_KEY = 'iron-contract-save';
-const SAVE_VERSION = '1';
+export const SAVE_VERSION = '1';
 
 /** Serialize GameState to JSON string */
 export function serializeState(state: GameState): string {

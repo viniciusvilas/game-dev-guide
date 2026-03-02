@@ -108,7 +108,7 @@ export function advanceWorldDay(state: GameState): GameState {
     currentDay: nextDay,
     soldiers: updatedSoldiers,
     events: cleanedQueue,
-    world: { ...state.world, currentDay: nextDay, timeOfDay },
+    world: { ...state.world, timeOfDay },
   };
 }
 

@@ -54,6 +54,5 @@ export interface Country {
 export interface WorldData {
   seed: WorldSeed;
   countries: Country[]; // exactly 2 in MVP
-  currentDay: number;
   timeOfDay: 'day' | 'night';
 }

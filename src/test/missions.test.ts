@@ -68,7 +68,7 @@ function makeWorld(): WorldData {
         }],
       }],
     }],
-    currentDay: 10,
+    
     timeOfDay: 'day',
   };
 }

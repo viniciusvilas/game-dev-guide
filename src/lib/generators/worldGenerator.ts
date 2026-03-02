@@ -97,7 +97,6 @@ export function generateWorld(seed: WorldSeed): WorldData {
   return {
     seed,
     countries,
-    currentDay: 1,
     timeOfDay: 'day',
   };
 }
