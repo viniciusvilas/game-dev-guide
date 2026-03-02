@@ -53,8 +53,7 @@ function generateWeapon(rng: SeededRng, template: WeaponTemplate): Weapon {
     cad: template.cad,
     pen: template.pen,
     silenciavel: template.silenciavel,
-    condition: 'new',
-    conditionPercent: 100,
+    condition: 100,
     price,
     repairCost: Math.round(price * 0.15),
   };
@@ -67,8 +66,7 @@ function generateArmor(rng: SeededRng, template: ArmorTemplate): Armor {
     type: template.type,
     mtVest: template.mtVest,
     nivel: template.nivel,
-    condition: 'new',
-    conditionPercent: 100,
+    condition: 100,
     price: template.price,
     repairCost: Math.round(template.price * 0.2),
   };

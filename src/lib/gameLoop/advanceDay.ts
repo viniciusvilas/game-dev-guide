@@ -22,7 +22,7 @@ import { checkGameOver } from './gameOverChecker';
 /** Process daily financial costs: salaries, maintenance, medical */
 export function processFinanceTick(state: GameState): GameState {
   const injuredCount = state.soldiers.filter(
-    s => s.status === 'injured' || s.status === 'severely_injured' || s.status === 'unconscious'
+    s => s.status === 'injured'
   ).length;
 
   const transactions = processDailyTick({
@@ -103,12 +103,11 @@ export function processPassiveTicks(state: GameState): GameState {
     let updated = { ...s, daysInService: s.daysInService + 1 };
 
     // Injured recovery: injured for >= 3 days → available
-    // We track via daysInService delta; simplified: injured → available after 3 ticks
-    // Use a simple heuristic: if injured and morale > 20, recover
     if (s.status === 'injured') {
-      // Recover after 3 days (approximated by missionsCompleted tracking)
-      // Simple approach: injured soldiers have a chance to recover each day
-      updated = { ...updated, status: 'available' as const };
+      const injuredSince = s.injuredSinceDay ?? state.currentDay;
+      if (state.currentDay - injuredSince >= 3) {
+        updated = { ...updated, status: 'available' as const, injuredSinceDay: undefined };
+      }
     }
 
     // Stress recovery: -5/day for available, -10/day for on_leave

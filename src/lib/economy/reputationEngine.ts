@@ -83,18 +83,9 @@ export function updateReputationByCountry(
   reputation: ReputationData,
   contract: import('@/types/contract').Contract,
 ): ReputationData {
-  const countryId = contract.targetCityId.split('-')[0]; // derive country from city ID prefix
-  // Find the country entry — try matching by contract's implied country
-  const byCountry = reputation.byCountry.map(entry => {
-    // We match all entries and only modify the one for this contract's country
-    // Since targetCityId format is "city-{countryId}-...", we need the world to resolve.
-    // Fallback: update the first country entry if no match found.
-    return entry;
-  });
-
   // Find country for this contract's city
-  let countryIdx = byCountry.findIndex(c => contract.targetCityId.includes(c.countryId));
-  if (countryIdx === -1 && byCountry.length > 0) {
+  let countryIdx = reputation.byCountry.findIndex(c => contract.targetCityId.includes(c.countryId));
+  if (countryIdx === -1 && reputation.byCountry.length > 0) {
     countryIdx = 0; // fallback to first country
   }
 
@@ -102,7 +93,7 @@ export function updateReputationByCountry(
     const delta = result.outcome === 'victory' ? 5
       : result.outcome === 'defeat' ? -8
       : -2;
-    const updated = [...byCountry];
+    const updated = [...reputation.byCountry];
     updated[countryIdx] = {
       ...updated[countryIdx],
       value: clamp(updated[countryIdx].value + delta, -100, 100),

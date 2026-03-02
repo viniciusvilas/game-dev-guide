@@ -2,8 +2,6 @@
 
 import type { WeaponCategory } from './soldier';
 
-export type WeaponCondition = 'new' | 'good' | 'worn' | 'damaged' | 'broken';
-
 export type ArmorType = 'light' | 'medium' | 'heavy';
 
 export interface Weapon {
@@ -14,8 +12,7 @@ export interface Weapon {
   cad: number;            // Cadência 1-10
   pen: number;            // Penetração de munição
   silenciavel: boolean;   // pode receber silenciador
-  condition: WeaponCondition;
-  conditionPercent: number; // 0-100, degrades with use
+  condition: number;      // 0-100
   price: number;
   repairCost: number;
 }
@@ -26,8 +23,7 @@ export interface Armor {
   type: ArmorType;
   mtVest: number;         // 0.00-0.88, mitigação do colete
   nivel: number;          // 0-4, nível de proteção
-  condition: WeaponCondition;
-  conditionPercent: number;
+  condition: number;      // 0-100
   price: number;
   repairCost: number;
 }

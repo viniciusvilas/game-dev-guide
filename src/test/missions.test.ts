@@ -40,7 +40,7 @@ function makeWeapon(overrides: Partial<Weapon> = {}): Weapon {
   return {
     id: 'wpn-1', name: 'AK-47', category: 'assault_rifle',
     pfb: 30, cad: 7, pen: 15, silenciavel: false,
-    condition: 'good', conditionPercent: 90, price: 2000, repairCost: 200,
+    condition: 90, price: 2000, repairCost: 200,
     ...overrides,
   };
 }
@@ -48,7 +48,7 @@ function makeWeapon(overrides: Partial<Weapon> = {}): Weapon {
 function makeArmor(overrides: Partial<Armor> = {}): Armor {
   return {
     id: 'arm-1', name: 'Kevlar', type: 'medium',
-    mtVest: 0.40, nivel: 2, condition: 'good', conditionPercent: 85,
+    mtVest: 0.40, nivel: 2, condition: 85,
     price: 1500, repairCost: 150, ...overrides,
   };
 }
@@ -228,7 +228,7 @@ describe('missionResolver', () => {
   it('sets healthy soldier to available after victory', () => {
     const soldiers = [makeSoldier()];
     const results = [makeSoldierResult({ damageState: 'healthy' })];
-    const resolved = resolveSoldierOutcomesPost(soldiers, results, true);
+    const resolved = resolveSoldierOutcomesPost(soldiers, results, true, 10);
     expect(resolved[0].soldier.status).toBe('available');
     expect(resolved[0].soldier.missionsCompleted).toBe(1);
   });
@@ -236,55 +236,56 @@ describe('missionResolver', () => {
   it('sets light_wound soldier to injured', () => {
     const soldiers = [makeSoldier()];
     const results = [makeSoldierResult({ damageState: 'light_wound' })];
-    const resolved = resolveSoldierOutcomesPost(soldiers, results, true);
+    const resolved = resolveSoldierOutcomesPost(soldiers, results, true, 10);
     expect(resolved[0].soldier.status).toBe('injured');
+    expect(resolved[0].soldier.injuredSinceDay).toBe(10);
   });
 
   it('sets heavy_wound soldier to severely_injured', () => {
     const soldiers = [makeSoldier()];
     const results = [makeSoldierResult({ damageState: 'heavy_wound' })];
-    const resolved = resolveSoldierOutcomesPost(soldiers, results, false);
+    const resolved = resolveSoldierOutcomesPost(soldiers, results, false, 10);
     expect(resolved[0].soldier.status).toBe('severely_injured');
   });
 
   it('sets critical soldier to unconscious', () => {
     const soldiers = [makeSoldier()];
     const results = [makeSoldierResult({ damageState: 'critical' })];
-    const resolved = resolveSoldierOutcomesPost(soldiers, results, false);
+    const resolved = resolveSoldierOutcomesPost(soldiers, results, false, 10);
     expect(resolved[0].soldier.status).toBe('unconscious');
   });
 
   it('sets dead soldier to dead and does not increment missions', () => {
     const soldiers = [makeSoldier()];
     const results = [makeSoldierResult({ damageState: 'dead' })];
-    const resolved = resolveSoldierOutcomesPost(soldiers, results, false);
+    const resolved = resolveSoldierOutcomesPost(soldiers, results, false, 10);
     expect(resolved[0].soldier.status).toBe('dead');
     expect(resolved[0].soldier.missionsCompleted).toBe(0);
   });
 
   it('victory reduces stress impact', () => {
     const soldiers = [makeSoldier({ stress: 50 })];
-    const resultsVictory = resolveSoldierOutcomesPost(soldiers, [makeSoldierResult({ damageState: 'light_wound' })], true);
-    const resultsDefeat = resolveSoldierOutcomesPost(soldiers, [makeSoldierResult({ damageState: 'light_wound' })], false);
+    const resultsVictory = resolveSoldierOutcomesPost(soldiers, [makeSoldierResult({ damageState: 'light_wound' })], true, 10);
+    const resultsDefeat = resolveSoldierOutcomesPost(soldiers, [makeSoldierResult({ damageState: 'light_wound' })], false, 10);
     expect(resultsVictory[0].soldier.stress).toBeLessThan(resultsDefeat[0].soldier.stress);
   });
 
   it('victory boosts morale for healthy soldier', () => {
     const soldiers = [makeSoldier({ morale: 50 })];
-    const resolved = resolveSoldierOutcomesPost(soldiers, [makeSoldierResult()], true);
+    const resolved = resolveSoldierOutcomesPost(soldiers, [makeSoldierResult()], true, 10);
     expect(resolved[0].soldier.morale).toBe(60); // +10
   });
 
   it('defeat decreases morale', () => {
     const soldiers = [makeSoldier({ morale: 50 })];
-    const resolved = resolveSoldierOutcomesPost(soldiers, [makeSoldierResult()], false);
+    const resolved = resolveSoldierOutcomesPost(soldiers, [makeSoldierResult()], false, 10);
     expect(resolved[0].soldier.morale).toBe(40); // -10
   });
 
   it('does not modify soldiers not in combat results', () => {
     const soldiers = [makeSoldier({ id: 'sol-2' })];
     const results = [makeSoldierResult({ soldierId: 'sol-1' })];
-    const resolved = resolveSoldierOutcomesPost(soldiers, results, true);
+    const resolved = resolveSoldierOutcomesPost(soldiers, results, true, 10);
     expect(resolved[0].soldier.status).toBe('available');
     expect(resolved[0].soldier.missionsCompleted).toBe(0);
   });

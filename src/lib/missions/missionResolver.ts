@@ -53,11 +53,11 @@ export function resolveSoldierOutcomesPost(
   soldiers: Soldier[],
   combatResults: SoldierCombatResult[],
   isVictory: boolean,
+  currentDay: number,
 ): ResolvedSoldier[] {
   return soldiers.map(s => {
     const result = combatResults.find(r => r.soldierId === s.id);
     if (!result) {
-      // Soldier wasn't in combat — no changes
       return { soldier: s, previousStatus: s.status };
     }
 
@@ -73,6 +73,10 @@ export function resolveSoldierOutcomesPost(
       missionsCompleted: result.damageState !== 'dead'
         ? s.missionsCompleted + 1
         : s.missionsCompleted,
+      // Track when soldier got injured
+      injuredSinceDay: (newStatus === 'injured' || newStatus === 'severely_injured' || newStatus === 'unconscious')
+        ? currentDay
+        : undefined,
     };
 
     return { soldier: updated, previousStatus: s.status };
