@@ -13,6 +13,18 @@ export type POIType =
   | 'terrorist_base'
   | 'transport_hub';
 
+export interface MapPosition {
+  x: number;
+  y: number;
+}
+
+export interface MapBounds {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
 export interface WorldSeed {
   value: number;
   timestamp: number;
@@ -36,6 +48,8 @@ export interface City {
   stability: number; // 0-100
   controlledByFactionId: string | null;
   pois: POI[];
+  mapPosition: MapPosition;
+  poiType: POIType;
 }
 
 export interface Region {
@@ -43,12 +57,15 @@ export interface Region {
   name: string;
   countryId: string;
   cities: City[];
+  mapBounds: MapBounds;
 }
 
 export interface Country {
   id: string;
   name: string;
   regions: Region[];
+  mapBounds: MapBounds;
+  color: string; // hex color for map rendering
 }
 
 export interface WorldData {

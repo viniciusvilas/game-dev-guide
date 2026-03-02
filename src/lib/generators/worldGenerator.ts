@@ -1,6 +1,6 @@
 // Iron Contract — World Generator (pure, deterministic)
 
-import type { WorldData, WorldSeed, Country, Region, City, CitySize, POI, POIType } from '@/types/world';
+import type { WorldData, WorldSeed, Country, Region, City, CitySize, POI, POIType, MapBounds, MapPosition } from '@/types/world';
 import type { SeededRng } from './seededRandom';
 import { createRng } from './seededRandom';
 import { generateCountryName, generateRegionName, generateCityName, generatePOIName } from './nameGenerator';
@@ -13,6 +13,45 @@ const POI_TYPES: POIType[] = [
 
 const CITY_SIZES: CitySize[] = ['small', 'medium', 'large'];
 
+const COUNTRY_COLORS = ['#3b82f6', '#ef4444']; // blue, red
+
+const COUNTRY_BOUNDS: MapBounds[] = [
+  { x: 0, y: 0, width: 500, height: 600 },
+  { x: 520, y: 0, width: 480, height: 600 },
+];
+
+/** Check if pos is at least minDist from all existing positions */
+function isPositionValid(pos: MapPosition, existing: MapPosition[], minDist: number): boolean {
+  for (const e of existing) {
+    const dx = pos.x - e.x;
+    const dy = pos.y - e.y;
+    if (dx * dx + dy * dy < minDist * minDist) return false;
+  }
+  return true;
+}
+
+/** Generate a valid city position within bounds, avoiding collisions */
+function generateCityPosition(
+  rng: SeededRng,
+  bounds: MapBounds,
+  existing: MapPosition[],
+  minDist: number,
+): MapPosition {
+  const padding = 20;
+  for (let attempt = 0; attempt < 50; attempt++) {
+    const pos: MapPosition = {
+      x: rng.nextInt(bounds.x + padding, bounds.x + bounds.width - padding),
+      y: rng.nextInt(bounds.y + padding, bounds.y + bounds.height - padding),
+    };
+    if (isPositionValid(pos, existing, minDist)) return pos;
+  }
+  // Fallback: place anyway
+  return {
+    x: rng.nextInt(bounds.x + padding, bounds.x + bounds.width - padding),
+    y: rng.nextInt(bounds.y + padding, bounds.y + bounds.height - padding),
+  };
+}
+
 function generatePOI(rng: SeededRng, cityId: string): POI {
   return {
     id: `poi-${rng.nextInt(100000, 999999)}`,
@@ -24,13 +63,22 @@ function generatePOI(rng: SeededRng, cityId: string): POI {
   };
 }
 
-function generateCity(rng: SeededRng, regionId: string, size: CitySize): City {
+function generateCity(
+  rng: SeededRng,
+  regionId: string,
+  size: CitySize,
+  regionBounds: MapBounds,
+  allPositions: MapPosition[],
+): City {
   const cityId = `city-${rng.nextInt(100000, 999999)}`;
   const poiCount = size === 'large' ? rng.nextInt(3, 5) : size === 'medium' ? rng.nextInt(2, 3) : rng.nextInt(1, 2);
   const pois: POI[] = [];
   for (let i = 0; i < poiCount; i++) {
     pois.push(generatePOI(rng, cityId));
   }
+
+  const mapPosition = generateCityPosition(rng, regionBounds, allPositions, 40);
+  allPositions.push(mapPosition);
 
   return {
     id: cityId,
@@ -43,18 +91,36 @@ function generateCity(rng: SeededRng, regionId: string, size: CitySize): City {
     stability: rng.nextInt(20, 80),
     controlledByFactionId: null,
     pois,
+    mapPosition,
+    poiType: rng.pick(POI_TYPES),
   };
 }
 
-function generateRegion(rng: SeededRng, countryId: string): Region {
+function divideRegionBounds(countryBounds: MapBounds, regionCount: number, regionIndex: number): MapBounds {
+  // Divide country vertically into regions
+  const regionHeight = Math.floor(countryBounds.height / regionCount);
+  return {
+    x: countryBounds.x,
+    y: countryBounds.y + regionIndex * regionHeight,
+    width: countryBounds.width,
+    height: regionHeight,
+  };
+}
+
+function generateRegion(
+  rng: SeededRng,
+  countryId: string,
+  regionBounds: MapBounds,
+  allPositions: MapPosition[],
+): Region {
   const regionId = `region-${rng.nextInt(100000, 999999)}`;
   const cityCount = rng.nextInt(2, 4);
   const cities: City[] = [];
 
   // Ensure at least one large city per region
-  cities.push(generateCity(rng, regionId, 'large'));
+  cities.push(generateCity(rng, regionId, 'large', regionBounds, allPositions));
   for (let i = 1; i < cityCount; i++) {
-    cities.push(generateCity(rng, regionId, rng.pick(CITY_SIZES)));
+    cities.push(generateCity(rng, regionId, rng.pick(CITY_SIZES), regionBounds, allPositions));
   }
 
   return {
@@ -62,22 +128,27 @@ function generateRegion(rng: SeededRng, countryId: string): Region {
     name: generateRegionName(rng),
     countryId,
     cities,
+    mapBounds: regionBounds,
   };
 }
 
-function generateCountry(rng: SeededRng, index: number): Country {
+function generateCountry(rng: SeededRng, index: number, allPositions: MapPosition[]): Country {
   const countryId = `country-${rng.nextInt(100000, 999999)}`;
+  const countryBounds = COUNTRY_BOUNDS[index] || { x: index * 520, y: 0, width: 480, height: 600 };
   const regionCount = rng.nextInt(2, 3);
   const regions: Region[] = [];
 
   for (let i = 0; i < regionCount; i++) {
-    regions.push(generateRegion(rng, countryId));
+    const regionBounds = divideRegionBounds(countryBounds, regionCount, i);
+    regions.push(generateRegion(rng, countryId, regionBounds, allPositions));
   }
 
   return {
     id: countryId,
     name: generateCountryName(rng, index),
     regions,
+    mapBounds: countryBounds,
+    color: COUNTRY_COLORS[index] || '#888888',
   };
 }
 
@@ -87,11 +158,12 @@ function generateCountry(rng: SeededRng, index: number): Country {
  */
 export function generateWorld(seed: WorldSeed): WorldData {
   const rng = createRng(seed.value);
+  const allPositions: MapPosition[] = [];
 
   const countries: Country[] = [];
   // MVP: exactly 2 countries
   for (let i = 0; i < 2; i++) {
-    countries.push(generateCountry(rng, i));
+    countries.push(generateCountry(rng, i, allPositions));
   }
 
   return {

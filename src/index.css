@@ -111,3 +111,22 @@
     font-family: 'JetBrains Mono', monospace;
   }
 }
+
+/* Map animations */
+@keyframes faction-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+@keyframes contract-pulse {
+  0%, 100% { r: 8; opacity: 0.9; }
+  50% { r: 10; opacity: 1; }
+}
+
+.animate-faction-pulse {
+  animation: faction-pulse 2s ease-in-out infinite;
+}
+
+.animate-contract-pulse {
+  animation: contract-pulse 1.5s ease-in-out infinite;
+}

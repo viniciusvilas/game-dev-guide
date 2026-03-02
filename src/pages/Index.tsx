@@ -3,6 +3,7 @@
 import { GameProvider, useGame } from '@/contexts/GameContext';
 import TitleScreen from '@/components/game/TitleScreen';
 import GameLayout from '@/components/game/GameLayout';
+import MapScreen from '@/components/game/MapScreen';
 import DashboardScreen from '@/components/game/DashboardScreen';
 import SoldiersScreen from '@/components/game/SoldiersScreen';
 import ContractsScreen from '@/components/game/ContractsScreen';
@@ -19,6 +20,11 @@ function GameRouter() {
 
   if (state.screen === 'gameover') {
     return <GameOverScreen />;
+  }
+
+  // Map screen is fullscreen — no sidebar layout
+  if (state.screen === 'map') {
+    return <MapScreen />;
   }
 
   const screenMap: Record<string, React.ReactNode> = {
