@@ -8,12 +8,13 @@ import type { CEO, GovernmentOfficial } from './character';
 import type { Company, Difficulty } from './company';
 import type { Base } from './base';
 import type { Contract, ActiveContract, ContractResult } from './contract';
-import type { FinanceRecord } from './economy';
+import type { CompanyFinances } from './economy';
 import type { ReputationData } from './reputation';
 import type { GameEvent } from './events';
 
 export interface GameState {
   version: string;          // save format version
+  seed: number;             // world seed for determinism
   difficulty: Difficulty;
   world: WorldData;
   company: Company;
@@ -27,7 +28,7 @@ export interface GameState {
   availableContracts: Contract[];
   activeContracts: ActiveContract[];
   contractHistory: ContractResult[];
-  finances: FinanceRecord;
+  finances: CompanyFinances;
   reputation: ReputationData;
   events: GameEvent[];
   currentDay: number;
