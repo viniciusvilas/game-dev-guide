@@ -57,14 +57,16 @@ function makeWorld(): WorldData {
   return {
     seed: { value: 42, timestamp: 0 },
     countries: [{
-      id: 'country-1', name: 'TestLand',
+      id: 'country-1', name: 'TestLand', mapBounds: { x: 0, y: 0, width: 500, height: 600 }, color: '#3b82f6',
       regions: [{
-        id: 'reg-1', name: 'TestRegion', countryId: 'country-1',
+        id: 'reg-1', name: 'TestRegion', countryId: 'country-1', mapBounds: { x: 0, y: 0, width: 500, height: 600 },
         cities: [{
           id: 'city-1', name: 'TestCity', regionId: 'reg-1',
           size: 'medium', population: 100000, stability: 50,
           controlledByFactionId: 'fac-1',
           pois: [{ id: 'poi-1', name: 'Base', type: 'conflict_zone', cityId: 'city-1', controlledByFactionId: 'fac-1', dangerLevel: 7 }],
+          mapPosition: { x: 100, y: 100 },
+          poiType: 'conflict_zone',
         }],
       }],
     }],

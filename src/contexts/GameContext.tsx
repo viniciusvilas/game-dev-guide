@@ -1,12 +1,11 @@
 // Iron Contract — Game Context (React state management)
 
-import React, { createContext, useContext, useReducer, useCallback, type ReactNode } from 'react';
+import React, { createContext, useContext, useReducer, type ReactNode } from 'react';
 import type { GameState } from '@/types/game';
-import type { GameOverReason } from '@/lib/gameLoop/gameOverChecker';
 import type { Soldier } from '@/types/soldier';
-import type { Weapon, Armor } from '@/types/equipment';
 import type { Contract, MissionApproach } from '@/types/contract';
 import type { Difficulty } from '@/types/company';
+import type { StructureType } from '@/types/base';
 import { newGame } from '@/lib/gameLoop/gameState';
 import { advanceDay } from '@/lib/gameLoop/advanceDay';
 import { saveGame, loadGame } from '@/lib/persistence/storage';
@@ -19,11 +18,10 @@ import { validateMission } from '@/lib/missions/missionValidator';
 import { getMarketCatalog, getWeaponRepairCost, getArmorRepairCost } from '@/lib/economy/marketPrices';
 import { generateWeaponCatalog, generateArmorCatalog } from '@/lib/generators/equipmentTables';
 import { createRng } from '@/lib/generators/seededRandom';
-import type { StructureType } from '@/types/base';
 
 // === Types ===
 
-type Screen = 'title' | 'dashboard' | 'soldiers' | 'contracts' | 'base' | 'market' | 'gameover';
+export type Screen = 'title' | 'map' | 'dashboard' | 'soldiers' | 'contracts' | 'base' | 'market' | 'gameover';
 
 type GameAction =
   | { type: 'NEW_GAME'; seed: number; difficulty: Difficulty }
@@ -41,6 +39,7 @@ type GameAction =
   | { type: 'BUY_WEAPON'; weaponName: string }
   | { type: 'BUY_ARMOR'; armorName: string }
   | { type: 'EXECUTE_MISSION'; contract: Contract; soldierIds: string[]; approach: MissionApproach }
+  | { type: 'RESOLVE_EVENT'; eventId: string }
   | { type: 'SAVE_GAME' };
 
 interface GameContextState {
@@ -55,10 +54,10 @@ function gameReducer(state: GameContextState, action: GameAction): GameContextSt
   switch (action.type) {
     case 'NEW_GAME': {
       const gs = newGame(action.seed, action.difficulty);
-      return { ...state, gameState: gs, screen: 'dashboard', lastMissionResult: null };
+      return { ...state, gameState: gs, screen: 'map', lastMissionResult: null };
     }
     case 'LOAD_GAME':
-      return { ...state, gameState: action.state, screen: 'dashboard', lastMissionResult: null };
+      return { ...state, gameState: action.state, screen: 'map', lastMissionResult: null };
     case 'ADVANCE_DAY': {
       if (!state.gameState) return state;
       const next = advanceDay(state.gameState);
@@ -156,7 +155,6 @@ function gameReducer(state: GameContextState, action: GameAction): GameContextSt
     }
     case 'HIRE_RECRUIT': {
       if (!state.gameState) return state;
-      const cost = getRecruitmentCost(action.soldier);
       const result = hireRecruit(action.soldier, state.gameState.finances.balance, state.gameState.currentDay);
       if (!result) return state;
       const gs = {
@@ -228,7 +226,6 @@ function gameReducer(state: GameContextState, action: GameAction): GameContextSt
       );
 
       let gs = applyMissionResult(missionResult, state.gameState);
-      // Move contract from available to history
       gs = {
         ...gs,
         availableContracts: gs.availableContracts.filter(c => c.id !== action.contract.id),
@@ -245,6 +242,15 @@ function gameReducer(state: GameContextState, action: GameAction): GameContextSt
       };
       saveGame(gs);
       return { ...state, gameState: gs, lastMissionResult: missionResult };
+    }
+    case 'RESOLVE_EVENT': {
+      if (!state.gameState) return state;
+      const events = state.gameState.events.map(e =>
+        e.id === action.eventId ? { ...e, resolved: true } : e
+      );
+      const gs = { ...state.gameState, events };
+      saveGame(gs);
+      return { ...state, gameState: gs };
     }
     case 'SAVE_GAME': {
       if (state.gameState) saveGame(state.gameState);
@@ -284,4 +290,4 @@ export function useGame() {
   return ctx;
 }
 
-export type { Screen, GameAction };
+export type { GameAction };

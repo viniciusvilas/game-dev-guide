@@ -10,10 +10,12 @@ import {
   Building2,
   ShoppingCart,
   Save,
+  Map as MapIcon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const NAV_ITEMS: { screen: Screen; label: string; icon: typeof LayoutDashboard }[] = [
+  { screen: 'map', label: 'Mapa', icon: MapIcon },
   { screen: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { screen: 'soldiers', label: 'Soldados', icon: Users },
   { screen: 'contracts', label: 'Contratos', icon: FileText },
