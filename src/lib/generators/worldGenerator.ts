@@ -40,7 +40,8 @@ function generateCityPosition(
   terrain: TerrainMap,
 ): MapPosition {
   const padding = 30;
-  for (let attempt = 0; attempt < 200; attempt++) {
+  // With continent mask, center of map has more land - expand search area
+  for (let attempt = 0; attempt < 500; attempt++) {
     const pos: MapPosition = {
       x: rng.nextInt(bounds.x + padding, bounds.x + bounds.width - padding),
       y: rng.nextInt(bounds.y + padding, bounds.y + bounds.height - padding),
@@ -49,18 +50,18 @@ function generateCityPosition(
       return pos;
     }
   }
-  // Fallback: find any land position
-  for (let attempt = 0; attempt < 100; attempt++) {
+  // Fallback: relax distance constraint
+  for (let attempt = 0; attempt < 500; attempt++) {
     const pos: MapPosition = {
       x: rng.nextInt(bounds.x + padding, bounds.x + bounds.width - padding),
       y: rng.nextInt(bounds.y + padding, bounds.y + bounds.height - padding),
     };
     if (isLandPosition(terrain, pos.x, pos.y)) return pos;
   }
-  return {
-    x: rng.nextInt(bounds.x + padding, bounds.x + bounds.width - padding),
-    y: rng.nextInt(bounds.y + padding, bounds.y + bounds.height - padding),
-  };
+  // Last resort: place near center of map where land is most likely
+  const cx = Math.floor(terrain.width / 2) + rng.nextInt(-100, 100);
+  const cy = Math.floor(terrain.height / 2) + rng.nextInt(-100, 100);
+  return { x: cx, y: cy };
 }
 
 function generatePOI(rng: SeededRng, cityId: string): POI {

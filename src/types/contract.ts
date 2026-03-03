@@ -1,6 +1,16 @@
 // Iron Contract — Contract Types (GDD-faithful)
 
-export type ContractType = 'security_local' | 'invasion';
+export type ContractType =
+  | 'security'
+  | 'continuous_security'
+  | 'escort'
+  | 'extraction'
+  | 'sabotage'
+  | 'tactical_invasion'
+  | 'reconnaissance'
+  | 'execution'
+  | 'war_support'
+  | 'territory_control';
 
 export type MissionApproach = 'stealth' | 'frontal' | 'quick';
 

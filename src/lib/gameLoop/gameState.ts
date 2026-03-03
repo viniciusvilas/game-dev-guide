@@ -1,5 +1,5 @@
 // Iron Contract — Game State Factory (GDD v2.0, pure, deterministic)
-// Creates initial GameState from seed + difficulty.
+// Creates initial GameState from seed + difficulty + optional startCityId.
 
 import type { GameState } from '@/types/game';
 import type { Difficulty } from '@/types/company';
@@ -21,10 +21,10 @@ const DIFFICULTY_CONFIG: Record<Difficulty, { funds: number; soldiers: number; f
 };
 
 /**
- * Create a new game from a seed and difficulty.
+ * Create a new game from a seed, difficulty, and optional starting city.
  * Pure and deterministic — same seed + difficulty = same game.
  */
-export function newGame(seed: number, difficulty: Difficulty): GameState {
+export function newGame(seed: number, difficulty: Difficulty, startCityId?: string): GameState {
   const config = DIFFICULTY_CONFIG[difficulty];
   const rng = createRng(seed);
 
@@ -32,8 +32,11 @@ export function newGame(seed: number, difficulty: Difficulty): GameState {
   const worldSeed = { value: seed, timestamp: 0 };
   const { world, terrainMap } = generateWorld(worldSeed);
 
-  // Find a starting city (first large city)
-  const startingCity = world.countries[0].regions[0].cities[0];
+  // Find starting city: use provided ID or default to first large city
+  let startingCityId = startCityId;
+  if (!startingCityId) {
+    startingCityId = world.countries[0].regions[0].cities[0].id;
+  }
 
   // Generate company
   const companyId = `company-${rng.nextInt(100000, 999999)}`;
@@ -50,8 +53,8 @@ export function newGame(seed: number, difficulty: Difficulty): GameState {
   // Generate CEO
   const ceo = generateCEO(rng.nextInt(0, 2147483647), companyId);
 
-  // Generate base
-  const base = createInitialBase(startingCity.id);
+  // Generate base at chosen city
+  const base = createInitialBase(startingCityId);
 
   // Generate soldiers
   const soldiers = generateStartingRoster(rng.nextInt(0, 2147483647), config.soldiers);
@@ -66,9 +69,9 @@ export function newGame(seed: number, difficulty: Difficulty): GameState {
   // Generate officials
   const officials = generateOfficials(rng.nextInt(0, 2147483647), world);
 
-  // Generate initial contracts
+  // Generate initial contracts (company level 1)
   const contracts = generateContracts(
-    rng.nextInt(0, 2147483647), 1, world, factions, officials, 3,
+    rng.nextInt(0, 2147483647), 1, world, factions, officials, 3, 1,
   );
 
   // Initial finances
@@ -104,5 +107,6 @@ export function newGame(seed: number, difficulty: Difficulty): GameState {
     events: [],
     currentDay: 1,
     gameOver: null,
+    companyLevel: 1,
   };
 }

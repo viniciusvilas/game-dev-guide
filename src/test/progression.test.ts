@@ -35,7 +35,7 @@ import type { Soldier, SoldierAttributes } from '@/types/soldier';
 function makeContract(overrides: Partial<Contract> = {}): Contract {
   return {
     id: 'ct-1', title: 'Test', description: 'Test contract',
-    type: 'security_local', clientId: 'gov-1', targetFactionId: 'fac-1',
+    type: 'security', clientId: 'gov-1', targetFactionId: 'fac-1',
     targetCityId: 'city-1', reward: 5000, penalty: 2000, durationDays: 3,
     dangerLevel: 5, requiredSoldiers: 4, expiresOnDay: 30, ...overrides,
   };

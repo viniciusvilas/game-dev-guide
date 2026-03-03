@@ -41,7 +41,7 @@ function makeContract(overrides: Partial<Contract> = {}): Contract {
     id: 'contract-1',
     title: 'Op Tempestade',
     description: 'Teste',
-    type: 'security_local',
+    type: 'security',
     clientId: 'client-1',
     targetFactionId: 'fac-1',
     targetCityId: 'city-1',
