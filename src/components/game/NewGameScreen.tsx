@@ -3,7 +3,6 @@
 import { useState, useMemo } from 'react';
 import { useGame } from '@/contexts/GameContext';
 import { generateWorld } from '@/lib/generators/worldGenerator';
-import { generateTerrainMap } from '@/lib/generators/terrainGenerator';
 import TerrainCanvas from '@/components/map/TerrainCanvas';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
