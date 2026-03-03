@@ -33,8 +33,16 @@ import { getMasteryLevel } from '@/lib/progression/weaponMasterySystem';
 /** Determine distance based on contract type */
 function getDistance(contractType: Contract['type']): DistanceCategory {
   switch (contractType) {
-    case 'invasion': return 'long';
-    case 'security_local': return 'medium';
+    case 'tactical_invasion': return 'long';
+    case 'security': return 'medium';
+    case 'continuous_security': return 'medium';
+    case 'escort': return 'medium';
+    case 'extraction': return 'close';
+    case 'sabotage': return 'medium';
+    case 'reconnaissance': return 'long';
+    case 'execution': return 'close';
+    case 'war_support': return 'long';
+    case 'territory_control': return 'long';
     default: return 'medium';
   }
 }

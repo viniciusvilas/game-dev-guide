@@ -1,8 +1,8 @@
-// Iron Contract — Map Screen (procedural terrain + SVG overlay + zoom/pan)
+// Iron Contract — Map Screen (3-level semantic zoom + terrain canvas)
 
 import { useState, useMemo, useRef, useCallback, useEffect } from 'react';
 import { useGame } from '@/contexts/GameContext';
-import type { City } from '@/types/world';
+import type { City, Country, Region } from '@/types/world';
 import type { Faction } from '@/types/faction';
 import { getFactionColor } from '@/lib/utils/factionColors';
 import { Button } from '@/components/ui/button';
@@ -12,33 +12,56 @@ import TerrainCanvas from '@/components/map/TerrainCanvas';
 import CityDrawer from './CityDrawer';
 import {
   Play, DollarSign, Calendar, AlertTriangle, Sun, Moon, Users, Save,
-  Map as MapIcon, UserCheck, Building2, ShoppingCart,
+  Map as MapIcon, UserCheck, Building2, ShoppingCart, ChevronRight, ArrowLeft,
 } from 'lucide-react';
 
 const MAP_WIDTH = 1000;
 const MAP_HEIGHT = 700;
 
+type ZoomLevel = 1 | 2 | 3;
+
+interface Viewport {
+  x: number;
+  y: number;
+  scale: number;
+}
+
+function computeViewport(level: ZoomLevel, country?: Country, region?: Region): Viewport {
+  if (level === 3 && region) {
+    const cx = region.mapBounds.x + region.mapBounds.width / 2;
+    const cy = region.mapBounds.y + region.mapBounds.height / 2;
+    return { x: cx, y: cy, scale: 5 };
+  }
+  if (level === 2 && country) {
+    const cx = country.mapBounds.x + country.mapBounds.width / 2;
+    const cy = country.mapBounds.y + country.mapBounds.height / 2;
+    return { x: cx, y: cy, scale: 2.5 };
+  }
+  return { x: MAP_WIDTH / 2, y: MAP_HEIGHT / 2, scale: 1 };
+}
+
 export default function MapScreen() {
   const { state, dispatch } = useGame();
   const gs = state.gameState!;
+  
+  const [zoomLevel, setZoomLevel] = useState<ZoomLevel>(1);
+  const [selectedCountry, setSelectedCountry] = useState<Country | null>(null);
+  const [selectedRegion, setSelectedRegion] = useState<Region | null>(null);
   const [selectedCityId, setSelectedCityId] = useState<string | null>(null);
 
-  // Zoom & Pan state
-  const [zoom, setZoom] = useState(1);
+  // Free zoom/pan within level
+  const [freeZoom, setFreeZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [isPanning, setIsPanning] = useState(false);
   const panStart = useRef({ x: 0, y: 0, panX: 0, panY: 0 });
-  const containerRef = useRef<HTMLDivElement>(null);
 
   const isNight = gs.world.timeOfDay === 'night';
   const criticalEvents = gs.events.filter(e => !e.resolved && e.priority === 'critical');
   const unresolvedEvents = gs.events.filter(e => !e.resolved);
   const hasCriticalEvents = criticalEvents.length > 0;
-
   const activeSoldiers = gs.soldiers.filter(s => s.status !== 'dead' && s.status !== 'deserted');
   const availableSoldiers = gs.soldiers.filter(s => s.status === 'available');
 
-  // City → dominant faction lookup
   const cityFactionMap = useMemo(() => {
     const map = new Map<string, Faction>();
     for (const f of gs.factions) {
@@ -52,7 +75,6 @@ export default function MapScreen() {
     return map;
   }, [gs.factions]);
 
-  // Contracts by city
   const contractsByCity = useMemo(() => {
     const map = new Map<string, number>();
     for (const c of gs.availableContracts) {
@@ -61,7 +83,6 @@ export default function MapScreen() {
     return map;
   }, [gs.availableContracts]);
 
-  // All cities flat
   const allCities = useMemo(() => {
     const cities: City[] = [];
     for (const country of gs.world.countries) {
@@ -76,13 +97,44 @@ export default function MapScreen() {
 
   const selectedCity = allCities.find(c => c.id === selectedCityId) || null;
 
-  // Zoom handler
+  const viewport = useMemo(
+    () => computeViewport(zoomLevel, selectedCountry ?? undefined, selectedRegion ?? undefined),
+    [zoomLevel, selectedCountry, selectedRegion],
+  );
+
+  // Reset free zoom/pan on level change
+  useEffect(() => {
+    setFreeZoom(1);
+    setPan({ x: 0, y: 0 });
+  }, [zoomLevel, selectedCountry, selectedRegion]);
+
+  const navigateToCountry = (country: Country) => {
+    setSelectedCountry(country);
+    setSelectedRegion(null);
+    setZoomLevel(2);
+  };
+
+  const navigateToRegion = (region: Region) => {
+    setSelectedRegion(region);
+    setZoomLevel(3);
+  };
+
+  const navigateBack = () => {
+    if (zoomLevel === 3) {
+      setSelectedRegion(null);
+      setZoomLevel(2);
+    } else if (zoomLevel === 2) {
+      setSelectedCountry(null);
+      setZoomLevel(1);
+    }
+  };
+
+  // Zoom handler (free zoom within level)
   const handleWheel = useCallback((e: React.WheelEvent) => {
     e.preventDefault();
-    setZoom(z => Math.max(0.5, Math.min(3, z - e.deltaY * 0.001)));
+    setFreeZoom(z => Math.max(0.5, Math.min(3, z - e.deltaY * 0.001)));
   }, []);
 
-  // Pan handlers
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     if (e.button !== 0) return;
     setIsPanning(true);
@@ -97,41 +149,75 @@ export default function MapScreen() {
     });
   }, [isPanning]);
 
-  const handleMouseUp = useCallback(() => {
-    setIsPanning(false);
-  }, []);
+  const handleMouseUp = useCallback(() => setIsPanning(false), []);
 
-  // Reset pan when releasing outside
   useEffect(() => {
     const up = () => setIsPanning(false);
     window.addEventListener('mouseup', up);
     return () => window.removeEventListener('mouseup', up);
   }, []);
 
+  const totalScale = viewport.scale * freeZoom;
+
+  // Determine which cities are visible at current zoom level
+  const visibleCities = useMemo(() => {
+    if (zoomLevel === 3 && selectedRegion) {
+      return allCities.filter(c => selectedRegion.cities.some(rc => rc.id === c.id));
+    }
+    if (zoomLevel === 2 && selectedCountry) {
+      return allCities.filter(c => 
+        selectedCountry.regions.some(r => r.cities.some(rc => rc.id === c.id))
+      );
+    }
+    return allCities;
+  }, [zoomLevel, selectedCountry, selectedRegion, allCities]);
+
   return (
     <div className="h-screen flex flex-col bg-background relative overflow-hidden">
       {/* HUD Overlay */}
       <HudOverlay
-        gs={gs}
-        isNight={isNight}
-        hasCriticalEvents={hasCriticalEvents}
-        unresolvedEvents={unresolvedEvents}
-        availableSoldiers={availableSoldiers}
-        activeSoldiers={activeSoldiers}
-        dispatch={dispatch}
-        screen={state.screen}
+        gs={gs} isNight={isNight} hasCriticalEvents={hasCriticalEvents}
+        unresolvedEvents={unresolvedEvents} availableSoldiers={availableSoldiers}
+        activeSoldiers={activeSoldiers} dispatch={dispatch}
       />
 
       {/* Side Navigation */}
-      <SideNav
-        screen={state.screen}
-        unresolvedEvents={unresolvedEvents}
-        dispatch={dispatch}
-      />
+      <SideNav screen={state.screen} unresolvedEvents={unresolvedEvents} dispatch={dispatch} />
 
-      {/* Map Container with zoom/pan */}
+      {/* Breadcrumb */}
+      {zoomLevel > 1 && (
+        <div className="absolute top-14 left-16 z-20 flex items-center gap-1 text-sm font-mono">
+          <Button variant="ghost" size="sm" className="h-7 px-2 text-xs bg-card/90 backdrop-blur" onClick={() => { setSelectedCountry(null); setSelectedRegion(null); setZoomLevel(1); }}>
+            Mundo
+          </Button>
+          {selectedCountry && (
+            <>
+              <ChevronRight className="w-3 h-3 text-muted-foreground" />
+              <Button
+                variant="ghost" size="sm"
+                className={`h-7 px-2 text-xs bg-card/90 backdrop-blur ${zoomLevel === 2 ? 'text-primary' : ''}`}
+                onClick={() => { setSelectedRegion(null); setZoomLevel(2); }}
+              >
+                {selectedCountry.name}
+              </Button>
+            </>
+          )}
+          {selectedRegion && (
+            <>
+              <ChevronRight className="w-3 h-3 text-muted-foreground" />
+              <Badge variant="secondary" className="text-xs font-mono bg-card/90 backdrop-blur">
+                {selectedRegion.name}
+              </Badge>
+            </>
+          )}
+          <Button variant="ghost" size="icon" className="w-7 h-7 bg-card/90 backdrop-blur ml-1" onClick={navigateBack}>
+            <ArrowLeft className="w-3.5 h-3.5" />
+          </Button>
+        </div>
+      )}
+
+      {/* Map Container */}
       <div
-        ref={containerRef}
         className="flex-1 w-full h-full overflow-hidden cursor-grab active:cursor-grabbing"
         onWheel={handleWheel}
         onMouseDown={handleMouseDown}
@@ -139,194 +225,184 @@ export default function MapScreen() {
         onMouseUp={handleMouseUp}
       >
         <div
+          className="transition-transform duration-400 ease-out"
           style={{
-            transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
-            transformOrigin: 'center center',
+            transform: `translate(${pan.x}px, ${pan.y}px) scale(${totalScale})`,
+            transformOrigin: `${viewport.x}px ${viewport.y}px`,
             width: '100%',
             height: '100%',
             position: 'relative',
           }}
         >
-          {/* Terrain Canvas */}
           <TerrainCanvas terrainMap={gs.terrainMap} nightMode={isNight} />
 
-          {/* SVG Overlay */}
           <svg
             viewBox={`0 0 ${MAP_WIDTH} ${MAP_HEIGHT}`}
             className="absolute inset-0 w-full h-full"
             style={{ pointerEvents: 'none' }}
           >
-            {/* Country borders */}
-            {gs.world.countries.map(country => (
-              <g key={country.id}>
+            {/* LEVEL 1 — Country names + overlays */}
+            {zoomLevel === 1 && gs.world.countries.map(country => {
+              const cities = country.regions.flatMap(r => r.cities);
+              const xs = cities.map(c => c.mapPosition.x);
+              const ys = cities.map(c => c.mapPosition.y);
+              const cx = (Math.min(...xs) + Math.max(...xs)) / 2;
+              const cy = (Math.min(...ys) + Math.max(...ys)) / 2;
+
+              return (
+                <g key={country.id}>
+                  <rect
+                    x={country.mapBounds.x} y={country.mapBounds.y}
+                    width={country.mapBounds.width} height={country.mapBounds.height}
+                    fill={country.color} fillOpacity={0.08}
+                    stroke="rgba(255,255,255,0.3)" strokeWidth={2}
+                    className="cursor-pointer"
+                    style={{ pointerEvents: 'all' }}
+                    onClick={() => navigateToCountry(country)}
+                  />
+                  <text
+                    x={cx} y={cy}
+                    textAnchor="middle" dominantBaseline="central"
+                    fill="rgba(255,255,255,0.4)"
+                    fontSize={24} fontFamily="'JetBrains Mono', monospace"
+                    fontWeight={700} letterSpacing={6}
+                    className="pointer-events-none"
+                  >
+                    {country.name.toUpperCase()}
+                  </text>
+                </g>
+              );
+            })}
+
+            {/* LEVEL 2 — Region divisions */}
+            {zoomLevel === 2 && selectedCountry && selectedCountry.regions.map(region => (
+              <g key={region.id}>
                 <rect
-                  x={country.mapBounds.x}
-                  y={country.mapBounds.y}
-                  width={country.mapBounds.width}
-                  height={country.mapBounds.height}
-                  fill="none"
-                  stroke="rgba(255,255,255,0.5)"
-                  strokeWidth={2}
+                  x={region.mapBounds.x} y={region.mapBounds.y}
+                  width={region.mapBounds.width} height={region.mapBounds.height}
+                  fill="transparent"
+                  stroke="rgba(255,255,255,0.25)" strokeWidth={1} strokeDasharray="8 5"
+                  className="cursor-pointer"
+                  style={{ pointerEvents: 'all' }}
+                  onClick={() => navigateToRegion(region)}
                 />
                 <text
-                  x={country.mapBounds.x + country.mapBounds.width / 2}
-                  y={country.mapBounds.y + 30}
+                  x={region.mapBounds.x + region.mapBounds.width / 2}
+                  y={region.mapBounds.y + 14}
                   textAnchor="middle"
-                  fill="rgba(255,255,255,0.25)"
-                  fontSize={22}
-                  fontFamily="'JetBrains Mono', monospace"
-                  fontWeight={700}
-                  letterSpacing={4}
+                  fill="rgba(255,255,255,0.5)" fontSize={10}
+                  fontFamily="'Inter', sans-serif"
+                  className="pointer-events-none"
                 >
-                  {country.name.toUpperCase()}
+                  {region.name}
                 </text>
               </g>
             ))}
 
-            {/* Region borders */}
-            {gs.world.countries.map(country =>
-              country.regions.map(region => (
-                <g key={region.id}>
-                  <rect
-                    x={region.mapBounds.x}
-                    y={region.mapBounds.y}
-                    width={region.mapBounds.width}
-                    height={region.mapBounds.height}
-                    fill="none"
-                    stroke="rgba(255,255,255,0.2)"
-                    strokeWidth={1}
-                    strokeDasharray="6 4"
-                  />
-                  <text
-                    x={region.mapBounds.x + region.mapBounds.width / 2}
-                    y={region.mapBounds.y + 18}
-                    textAnchor="middle"
-                    fill="rgba(255,255,255,0.3)"
-                    fontSize={10}
-                    fontFamily="'Inter', sans-serif"
-                  >
-                    {region.name}
-                  </text>
-                </g>
-              ))
-            )}
-
-            {/* Faction territory circles */}
-            {allCities.map(city => {
+            {/* Faction territory circles (levels 2-3) */}
+            {zoomLevel >= 2 && visibleCities.map(city => {
               const faction = cityFactionMap.get(city.id);
               if (!faction) return null;
               const color = getFactionColor(faction.id);
               const radius = Math.max(20, Math.min(60, faction.militaryPower * 0.6));
               const opacity = (faction.militaryPower / 100) * 0.4;
               const isPulsing = faction.militaryPower >= 80;
-
               return (
                 <circle
                   key={`faction-${city.id}`}
-                  cx={city.mapPosition.x}
-                  cy={city.mapPosition.y}
-                  r={radius}
-                  fill={color}
-                  fillOpacity={opacity}
+                  cx={city.mapPosition.x} cy={city.mapPosition.y}
+                  r={radius} fill={color} fillOpacity={opacity}
                   className={isPulsing ? 'animate-faction-pulse' : ''}
                 />
               );
             })}
 
             {/* Cities */}
-            {allCities.map(city => {
+            {(zoomLevel >= 2 ? visibleCities : allCities).map(city => {
               const isBase = city.id === gs.base.cityId;
               const hasContracts = (contractsByCity.get(city.id) || 0) > 0;
               const faction = cityFactionMap.get(city.id);
               const factionColor = faction ? getFactionColor(faction.id) : undefined;
               const contractCount = contractsByCity.get(city.id) || 0;
+              const showDetails = zoomLevel >= 2;
 
               return (
                 <g
                   key={city.id}
                   className="cursor-pointer"
-                  style={{ pointerEvents: 'auto' }}
+                  style={{ pointerEvents: 'all' }}
                   onClick={(e) => {
                     e.stopPropagation();
+                    if (zoomLevel === 1) return; // level 1 = click country, not city
+                    if (zoomLevel === 2) {
+                      // Find region for this city and zoom in
+                      const region = selectedCountry?.regions.find(r => r.cities.some(c => c.id === city.id));
+                      if (region) navigateToRegion(region);
+                      return;
+                    }
                     setSelectedCityId(city.id);
                   }}
                 >
                   {/* Faction border ring */}
-                  {factionColor && (
+                  {showDetails && factionColor && (
                     <circle
-                      cx={city.mapPosition.x}
-                      cy={city.mapPosition.y}
+                      cx={city.mapPosition.x} cy={city.mapPosition.y}
                       r={isBase ? 15 : 11}
-                      fill="none"
-                      stroke={factionColor}
-                      strokeWidth={2}
-                      strokeOpacity={0.7}
+                      fill="none" stroke={factionColor} strokeWidth={2} strokeOpacity={0.7}
                     />
                   )}
 
                   {isBase ? (
                     <>
                       <circle
-                        cx={city.mapPosition.x}
-                        cy={city.mapPosition.y}
-                        r={12}
-                        fill="hsl(38, 92%, 50%)"
-                        fillOpacity={0.9}
-                        stroke="hsl(38, 92%, 65%)"
-                        strokeWidth={2}
+                        cx={city.mapPosition.x} cy={city.mapPosition.y}
+                        r={showDetails ? 12 : 6}
+                        fill="hsl(38, 92%, 50%)" fillOpacity={0.9}
+                        stroke="hsl(38, 92%, 65%)" strokeWidth={2}
                       />
-                      <text
-                        x={city.mapPosition.x}
-                        y={city.mapPosition.y + 4}
-                        textAnchor="middle"
-                        fontSize={12}
-                        fill="white"
-                      >
-                        🛡
-                      </text>
+                      {showDetails && (
+                        <text
+                          x={city.mapPosition.x} y={city.mapPosition.y + 4}
+                          textAnchor="middle" fontSize={12} fill="white"
+                        >
+                          🛡
+                        </text>
+                      )}
                     </>
                   ) : (
                     <circle
-                      cx={city.mapPosition.x}
-                      cy={city.mapPosition.y}
-                      r={8}
+                      cx={city.mapPosition.x} cy={city.mapPosition.y}
+                      r={showDetails ? 8 : 4}
                       fill={hasContracts ? 'hsl(38, 92%, 50%)' : 'hsl(0, 0%, 85%)'}
                       fillOpacity={hasContracts ? 0.9 : 0.7}
                       stroke={hasContracts ? 'hsl(38, 92%, 65%)' : 'hsl(0, 0%, 95%)'}
                       strokeWidth={1.5}
-                      className={hasContracts ? 'animate-contract-pulse' : ''}
+                      className={hasContracts && showDetails ? 'animate-contract-pulse' : ''}
                     />
                   )}
 
                   {/* Contract count */}
-                  {hasContracts && !isBase && (
+                  {showDetails && hasContracts && !isBase && (
                     <text
-                      x={city.mapPosition.x}
-                      y={city.mapPosition.y + 3.5}
-                      textAnchor="middle"
-                      fontSize={9}
-                      fill="white"
-                      fontFamily="'JetBrains Mono', monospace"
-                      fontWeight={700}
+                      x={city.mapPosition.x} y={city.mapPosition.y + 3.5}
+                      textAnchor="middle" fontSize={9} fill="white"
+                      fontFamily="'JetBrains Mono', monospace" fontWeight={700}
                     >
                       {contractCount}
                     </text>
                   )}
 
-                  {/* City name */}
-                  <text
-                    x={city.mapPosition.x}
-                    y={city.mapPosition.y + (isBase ? 24 : 20)}
-                    textAnchor="middle"
-                    fill="rgba(255,255,255,0.8)"
-                    fontSize={9}
-                    fontFamily="'Inter', sans-serif"
-                    fontWeight={isBase ? 600 : 400}
-                    stroke="rgba(0,0,0,0.5)"
-                    strokeWidth={0.3}
-                  >
-                    {city.name}
-                  </text>
+                  {/* City name (level 3 only) */}
+                  {zoomLevel === 3 && (
+                    <text
+                      x={city.mapPosition.x} y={city.mapPosition.y + (isBase ? 24 : 20)}
+                      textAnchor="middle" fill="rgba(255,255,255,0.85)" fontSize={9}
+                      fontFamily="'Inter', sans-serif" fontWeight={isBase ? 600 : 400}
+                      stroke="rgba(0,0,0,0.5)" strokeWidth={0.3}
+                    >
+                      {city.name}
+                    </text>
+                  )}
                 </g>
               );
             })}
@@ -335,9 +411,9 @@ export default function MapScreen() {
       </div>
 
       {/* Zoom indicator */}
-      <div className="absolute bottom-4 right-4 z-20">
+      <div className="absolute bottom-4 right-4 z-20 flex items-center gap-2">
         <Badge variant="secondary" className="font-mono text-xs bg-card/90 backdrop-blur border border-border">
-          {Math.round(zoom * 100)}%
+          Nv.{zoomLevel} • {Math.round(totalScale * 100)}%
         </Badge>
       </div>
 
@@ -364,7 +440,7 @@ export default function MapScreen() {
 // === Sub-components ===
 
 function HudOverlay({
-  gs, isNight, hasCriticalEvents, unresolvedEvents, availableSoldiers, activeSoldiers, dispatch, screen,
+  gs, isNight, hasCriticalEvents, unresolvedEvents, availableSoldiers, activeSoldiers, dispatch,
 }: {
   gs: import('@/types/game').GameState;
   isNight: boolean;
@@ -373,7 +449,6 @@ function HudOverlay({
   availableSoldiers: import('@/types/soldier').Soldier[];
   activeSoldiers: import('@/types/soldier').Soldier[];
   dispatch: React.Dispatch<import('@/contexts/GameContext').GameAction>;
-  screen: string;
 }) {
   return (
     <div className="absolute top-0 left-0 right-0 z-20 pointer-events-none">
@@ -392,6 +467,9 @@ function HudOverlay({
             <Users className="w-3.5 h-3.5" />
             {availableSoldiers.length}/{activeSoldiers.length} operadores
           </Badge>
+          <Badge variant="secondary" className="font-mono text-xs gap-1.5 py-1 px-2.5 bg-card/90 backdrop-blur border border-border">
+            Nv.{gs.companyLevel}
+          </Badge>
           {unresolvedEvents.length > 0 && (
             <Badge variant={hasCriticalEvents ? 'destructive' : 'secondary'} className="font-mono text-xs gap-1.5 py-1 px-2.5">
               <AlertTriangle className="w-3.5 h-3.5" />
@@ -403,34 +481,23 @@ function HudOverlay({
             {isNight ? 'Noturno' : 'Diurno'}
           </Badge>
         </div>
-
         <div className="flex items-center gap-2">
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
                 <span>
-                  <Button
-                    size="sm"
-                    className="font-mono text-xs gap-1.5"
+                  <Button size="sm" className="font-mono text-xs gap-1.5"
                     onClick={() => dispatch({ type: 'ADVANCE_DAY' })}
                     disabled={hasCriticalEvents}
                   >
-                    <Play className="w-3.5 h-3.5" />
-                    AVANÇAR DIA
+                    <Play className="w-3.5 h-3.5" /> AVANÇAR DIA
                   </Button>
                 </span>
               </TooltipTrigger>
-              {hasCriticalEvents && (
-                <TooltipContent>Resolva eventos críticos primeiro</TooltipContent>
-              )}
+              {hasCriticalEvents && <TooltipContent>Resolva eventos críticos primeiro</TooltipContent>}
             </Tooltip>
           </TooltipProvider>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-xs"
-            onClick={() => dispatch({ type: 'SAVE_GAME' })}
-          >
+          <Button variant="ghost" size="sm" className="text-xs" onClick={() => dispatch({ type: 'SAVE_GAME' })}>
             <Save className="w-3.5 h-3.5" />
           </Button>
         </div>
@@ -477,8 +544,7 @@ function SideNav({
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
-                variant="secondary"
-                size="icon"
+                variant="secondary" size="icon"
                 className="w-10 h-10 bg-card/90 backdrop-blur border border-border relative"
                 onClick={() => dispatch({ type: 'NAVIGATE', screen: 'dashboard' })}
               >
@@ -497,8 +563,7 @@ function SideNav({
 }
 
 function CriticalEventModal({
-  events,
-  onResolve,
+  events, onResolve,
 }: {
   events: import('@/types/events').GameEvent[];
   onResolve: (id: string) => void;
@@ -528,18 +593,11 @@ function CriticalEventModal({
           </div>
         )}
         <div className="flex items-center justify-between">
-          <span className="text-xs text-muted-foreground font-mono">
-            {currentIndex + 1}/{events.length}
-          </span>
-          <Button
-            size="sm"
-            variant="destructive"
-            className="font-mono"
+          <span className="text-xs text-muted-foreground font-mono">{currentIndex + 1}/{events.length}</span>
+          <Button size="sm" variant="destructive" className="font-mono"
             onClick={() => {
               onResolve(evt.id);
-              if (currentIndex < events.length - 1) {
-                setCurrentIndex(currentIndex + 1);
-              }
+              if (currentIndex < events.length - 1) setCurrentIndex(currentIndex + 1);
             }}
           >
             CONFIRMAR

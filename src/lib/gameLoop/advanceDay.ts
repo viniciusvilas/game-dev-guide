@@ -149,6 +149,7 @@ export function processPassiveTicks(state: GameState): GameState {
       state.factions,
       state.officials,
       needed,
+      state.companyLevel ?? 1,
     );
     availableContracts = [...availableContracts, ...newContracts];
   }

@@ -30,7 +30,7 @@ function makeSoldier(overrides: Partial<Soldier> = {}): Soldier {
 function makeContract(overrides: Partial<Contract> = {}): Contract {
   return {
     id: 'ct-1', title: 'Test', description: 'Test contract',
-    type: 'security_local', clientId: 'gov-1', targetFactionId: 'fac-1',
+    type: 'security', clientId: 'gov-1', targetFactionId: 'fac-1',
     targetCityId: 'city-1', reward: 5000, penalty: 2000, durationDays: 3,
     dangerLevel: 5, requiredSoldiers: 1, expiresOnDay: 30, ...overrides,
   };
@@ -167,7 +167,7 @@ describe('missionManager', () => {
     });
 
     it('sets distance=long for invasion', () => {
-      const ctx = buildCombatContext(makeContract({ type: 'invasion' }), makeWorld(), 'stealth', 10);
+      const ctx = buildCombatContext(makeContract({ type: 'tactical_invasion' }), makeWorld(), 'stealth', 10);
       expect(ctx.distance).toBe('long');
     });
 

@@ -1,7 +1,7 @@
 // Iron Contract — Main Game Router
 
 import { GameProvider, useGame } from '@/contexts/GameContext';
-import TitleScreen from '@/components/game/TitleScreen';
+import NewGameScreen from '@/components/game/NewGameScreen';
 import GameLayout from '@/components/game/GameLayout';
 import MapScreen from '@/components/game/MapScreen';
 import DashboardScreen from '@/components/game/DashboardScreen';
@@ -15,7 +15,7 @@ function GameRouter() {
   const { state } = useGame();
 
   if (state.screen === 'title' || !state.gameState) {
-    return <TitleScreen />;
+    return <NewGameScreen />;
   }
 
   if (state.screen === 'gameover') {

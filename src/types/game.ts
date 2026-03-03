@@ -36,4 +36,5 @@ export interface GameState {
   events: GameEvent[];
   currentDay: number;
   gameOver: GameOverReason;
+  companyLevel: number;     // 1-50, unlocks contract types
 }

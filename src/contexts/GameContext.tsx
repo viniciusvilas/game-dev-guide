@@ -24,7 +24,7 @@ import { createRng } from '@/lib/generators/seededRandom';
 export type Screen = 'title' | 'map' | 'dashboard' | 'soldiers' | 'contracts' | 'base' | 'market' | 'gameover';
 
 type GameAction =
-  | { type: 'NEW_GAME'; seed: number; difficulty: Difficulty }
+  | { type: 'NEW_GAME'; seed: number; difficulty: Difficulty; startCityId?: string }
   | { type: 'LOAD_GAME'; state: GameState }
   | { type: 'ADVANCE_DAY' }
   | { type: 'NAVIGATE'; screen: Screen }
@@ -53,7 +53,7 @@ interface GameContextState {
 function gameReducer(state: GameContextState, action: GameAction): GameContextState {
   switch (action.type) {
     case 'NEW_GAME': {
-      const gs = newGame(action.seed, action.difficulty);
+      const gs = newGame(action.seed, action.difficulty, action.startCityId);
       return { ...state, gameState: gs, screen: 'map', lastMissionResult: null };
     }
     case 'LOAD_GAME':
