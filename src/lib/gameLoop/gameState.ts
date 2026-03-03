@@ -28,9 +28,9 @@ export function newGame(seed: number, difficulty: Difficulty): GameState {
   const config = DIFFICULTY_CONFIG[difficulty];
   const rng = createRng(seed);
 
-  // Generate world
+  // Generate world + terrain
   const worldSeed = { value: seed, timestamp: 0 };
-  const world = generateWorld(worldSeed);
+  const { world, terrainMap } = generateWorld(worldSeed);
 
   // Find a starting city (first large city)
   const startingCity = world.countries[0].regions[0].cities[0];
@@ -87,6 +87,7 @@ export function newGame(seed: number, difficulty: Difficulty): GameState {
     seed,
     difficulty,
     world,
+    terrainMap,
     company,
     ceo,
     base,

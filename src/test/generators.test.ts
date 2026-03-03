@@ -32,22 +32,35 @@ describe('Seeded PRNG', () => {
 
 describe('World Generator', () => {
   it('same seed produces identical worlds', () => {
-    const w1 = generateWorld(TEST_SEED);
-    const w2 = generateWorld(TEST_SEED);
-    expect(JSON.stringify(w1)).toBe(JSON.stringify(w2));
+    const r1 = generateWorld(TEST_SEED);
+    const r2 = generateWorld(TEST_SEED);
+    // Compare world data (skip pixelData for perf)
+    expect(JSON.stringify(r1.world)).toBe(JSON.stringify(r2.world));
   });
 
   it('generates exactly 2 countries', () => {
-    const w = generateWorld(TEST_SEED);
-    expect(w.countries).toHaveLength(2);
+    const { world } = generateWorld(TEST_SEED);
+    expect(world.countries).toHaveLength(2);
   });
 
   it('each country has regions with cities', () => {
-    const w = generateWorld(TEST_SEED);
-    for (const country of w.countries) {
+    const { world } = generateWorld(TEST_SEED);
+    for (const country of world.countries) {
       expect(country.regions.length).toBeGreaterThanOrEqual(2);
       for (const region of country.regions) {
         expect(region.cities.length).toBeGreaterThanOrEqual(2);
+      }
+    }
+  });
+
+  it('cities are placed on land (elevation > 0.42)', () => {
+    const { world, terrainMap } = generateWorld(TEST_SEED);
+    for (const country of world.countries) {
+      for (const region of country.regions) {
+        for (const city of region.cities) {
+          const idx = Math.round(city.mapPosition.y) * terrainMap.width + Math.round(city.mapPosition.x);
+          expect(terrainMap.heightmap[idx]).toBeGreaterThan(0.42);
+        }
       }
     }
   });
@@ -94,7 +107,7 @@ describe('Equipment Tables', () => {
 
 describe('Faction Generator', () => {
   it('same seed produces identical factions', () => {
-    const world = generateWorld(TEST_SEED);
+    const { world } = generateWorld(TEST_SEED);
     const f1 = generateFactions(42, world, 5);
     const f2 = generateFactions(42, world, 5);
     expect(JSON.stringify(f1)).toBe(JSON.stringify(f2));
@@ -103,7 +116,7 @@ describe('Faction Generator', () => {
 
 describe('Contract Generator', () => {
   it('same seed + day produces identical contracts', () => {
-    const world = generateWorld(TEST_SEED);
+    const { world } = generateWorld(TEST_SEED);
     const factions = generateFactions(42, world, 5);
     const officials = generateOfficials(42, world);
     const c1 = generateContracts(42, 1, world, factions, officials, 3);
@@ -112,7 +125,7 @@ describe('Contract Generator', () => {
   });
 
   it('different days produce different contracts', () => {
-    const world = generateWorld(TEST_SEED);
+    const { world } = generateWorld(TEST_SEED);
     const factions = generateFactions(42, world, 5);
     const officials = generateOfficials(42, world);
     const c1 = generateContracts(42, 1, world, factions, officials, 3);
