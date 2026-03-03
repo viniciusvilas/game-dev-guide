@@ -12,12 +12,14 @@ import type { CompanyFinances } from './economy';
 import type { ReputationData } from './reputation';
 import type { GameEvent } from './events';
 import type { GameOverReason } from '@/lib/gameLoop/gameOverChecker';
+import type { TerrainMap } from '@/lib/generators/terrainGenerator';
 
 export interface GameState {
   version: string;          // save format version
   seed: number;             // world seed for determinism
   difficulty: Difficulty;
   world: WorldData;
+  terrainMap: TerrainMap;
   company: Company;
   ceo: CEO;
   base: Base;
